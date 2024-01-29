@@ -19,7 +19,7 @@ func (c *Cache) Set(key string, value string) {
 	if ok {
 		existingNode.value = value
 		c.remove(existingNode)
-		c.setHead(existingNode)
+		c.linkFirst(existingNode)
 	} else {
 		if len(c.cacheMap) >= c.capacity {
 			delete(c.cacheMap, c.tail.key)
@@ -32,7 +32,7 @@ func (c *Cache) Set(key string, value string) {
 			nil,
 		}
 		c.cacheMap[key] = &newNode
-		c.setHead(&newNode)
+		c.linkFirst(&newNode)
 	}
 
 }
@@ -43,47 +43,46 @@ func (c *Cache) Get(key string) string {
 		return ""
 	}
 	c.remove(node)
-	c.setHead(node)
+	c.linkFirst(node)
 	return node.value
 }
 
-func (c *Cache) remove(node *node) *node {
-	predecessor := node.prev
-	successor := node.next
-	if c.head != node {
-		predecessor.next = successor
-		successor.prev = predecessor
+func (c *Cache) remove(node *node) {
+	if node == c.head {
+		return
+	} else if node == c.tail {
+		prev := node.prev
+		prev.next = node
+		node.next = nil
+		c.tail = prev
+	} else {
+		prev := node.prev
+		next := node.next
+		prev.next = next
+		next.prev = prev
 	}
-	return node
 }
 
-func (c *Cache) setHead(node *node) {
-	node.next = c.head.next
-	node.prev = c.head
-	c.head.next = node
-	c.head = node
+func (c *Cache) linkFirst(newNode *node) {
+	oldHead := c.head
+	newNode.prev = nil
+	newNode.next = oldHead
+	c.head = newNode
+	if oldHead == nil {
+		c.tail = newNode
+	} else {
+		oldHead.prev = newNode
+	}
 }
 
 func NewCache(cap int) *Cache {
-	newHead := node{
-		key:   "",
-		value: "",
-		next:  nil,
-		prev:  nil,
-	}
-	newTail := node{
-		key:   "",
-		value: "",
-		next:  &newHead,
-		prev:  nil,
-	}
 	newCacheMap := make(map[string]*node, cap)
 
 	cache := Cache{
 		cacheMap: newCacheMap,
 		capacity: cap,
-		head:     &newHead,
-		tail:     &newTail,
+		head:     nil,
+		tail:     nil,
 	}
 	return &cache
 }
