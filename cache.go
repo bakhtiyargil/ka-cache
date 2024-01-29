@@ -8,7 +8,7 @@ type node struct {
 }
 
 type Cache struct {
-	cacheMap map[string]node
+	cacheMap map[string]*node
 	capacity int
 	head     *node
 	tail     *node
@@ -18,8 +18,8 @@ func (c *Cache) Set(key string, value string) {
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.value = value
-		c.remove(&existingNode)
-		c.setHead(&existingNode)
+		c.remove(existingNode)
+		c.setHead(existingNode)
 	} else {
 		if len(c.cacheMap) >= c.capacity {
 			delete(c.cacheMap, c.tail.key)
@@ -28,10 +28,10 @@ func (c *Cache) Set(key string, value string) {
 		var newNode = node{
 			key,
 			value,
-			c.head.next,
-			c.head,
+			nil,
+			nil,
 		}
-		c.cacheMap[key] = newNode
+		c.cacheMap[key] = &newNode
 		c.setHead(&newNode)
 	}
 
@@ -42,20 +42,24 @@ func (c *Cache) Get(key string) string {
 	if !ok {
 		return ""
 	}
-	c.remove(&node)
-	c.setHead(&node)
+	c.remove(node)
+	c.setHead(node)
 	return node.value
 }
 
 func (c *Cache) remove(node *node) *node {
 	predecessor := node.prev
 	successor := node.next
-	predecessor.next = successor
-	successor.prev = predecessor
+	if c.head != node {
+		predecessor.next = successor
+		successor.prev = predecessor
+	}
 	return node
 }
 
 func (c *Cache) setHead(node *node) {
+	node.next = c.head.next
+	node.prev = c.head
 	c.head.next = node
 	c.head = node
 }
@@ -73,7 +77,7 @@ func NewCache(cap int) *Cache {
 		next:  &newHead,
 		prev:  nil,
 	}
-	newCacheMap := make(map[string]node, cap)
+	newCacheMap := make(map[string]*node, cap)
 
 	cache := Cache{
 		cacheMap: newCacheMap,
