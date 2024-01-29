@@ -8,13 +8,17 @@ type node struct {
 }
 
 type Cache struct {
+	*cache
+}
+
+type cache struct {
 	cacheMap map[string]*node
 	capacity int
 	head     *node
 	tail     *node
 }
 
-func (c *Cache) Set(key string, value string) {
+func (c *cache) Set(key string, value string) {
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.value = value
@@ -37,7 +41,7 @@ func (c *Cache) Set(key string, value string) {
 
 }
 
-func (c *Cache) Get(key string) string {
+func (c *cache) Get(key string) string {
 	node, ok := c.cacheMap[key]
 	if !ok {
 		return ""
@@ -47,7 +51,7 @@ func (c *Cache) Get(key string) string {
 	return node.value
 }
 
-func (c *Cache) remove(node *node) {
+func (c *cache) remove(node *node) {
 	if node == c.head {
 		return
 	} else if node == c.tail {
@@ -63,7 +67,7 @@ func (c *Cache) remove(node *node) {
 	}
 }
 
-func (c *Cache) linkFirst(newNode *node) {
+func (c *cache) linkFirst(newNode *node) {
 	oldHead := c.head
 	newNode.prev = nil
 	newNode.next = oldHead
@@ -78,11 +82,11 @@ func (c *Cache) linkFirst(newNode *node) {
 func NewCache(cap int) *Cache {
 	newCacheMap := make(map[string]*node, cap)
 
-	cache := Cache{
+	cache := cache{
 		cacheMap: newCacheMap,
 		capacity: cap,
 		head:     nil,
 		tail:     nil,
 	}
-	return &cache
+	return &Cache{&cache}
 }
