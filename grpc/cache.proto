@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "ka-cache/grpc";
+
+package grpc;
+
+service Cache {
+
+  rpc Put(Item) returns (Response) {}
+  rpc Get(Object) returns (Response) {}
+
+}
+
+message Item {
+
+  string key = 1;
+  string value = 2;
+
+}
+
+message Object {
+
+  string key = 1;
+
+}
+
+message Response {
+
+  string message = 1;
+  uint32 code = 2;
+  string data = 3;
+
+}

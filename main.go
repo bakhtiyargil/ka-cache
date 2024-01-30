@@ -1,23 +1,33 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	pb "ka-cache/grpc"
+	"log"
+	"time"
+)
 
 func main() {
+	var optsDial []grpc.DialOption
 
-	var cac = NewCache(5)
-	cac.Set("a", "neymar")
-	cac.Set("b", "jr")
-	cac.Set("b", "valdes")
-	cac.Set("b", "iniesta")
-	cac.Set("c", "nunez")
-	for key, value := range cac.cacheMap {
-		fmt.Printf("%s: %s\n", key, value.value)
+	optsDial = append(optsDial, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial("localhost:5000", optsDial...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
 	}
+	defer conn.Close()
 
-	fmt.Println("head: " + cac.head.value)
-	cac.Get("a")
-	fmt.Println("head: " + cac.head.value)
+	client := pb.NewCacheClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	response, err := client.Put(ctx, &pb.Item{
+		Key:   "Isaq",
+		Value: "A",
+	})
 
-	fmt.Println("Ka-cache!")
-
+	fmt.Println(response)
 }

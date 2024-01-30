@@ -1,4 +1,4 @@
-package main
+package cache
 
 type node struct {
 	key   string
