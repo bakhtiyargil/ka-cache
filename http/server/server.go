@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/context"
 	"ka-cache/config"
-	"log"
+	"ka-cache/pkg/logger"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,12 +13,13 @@ import (
 )
 
 type Server struct {
-	echo *echo.Echo
-	cfg  *config.Config
+	echo   *echo.Echo
+	cfg    *config.Config
+	logger logger.Logger
 }
 
-func NewServer(cfg *config.Config) *Server {
-	return &Server{echo: echo.New(), cfg: cfg}
+func NewServer(cfg *config.Config, logger logger.Logger) *Server {
+	return &Server{echo: echo.New(), cfg: cfg, logger: logger}
 }
 
 func (s *Server) Run() error {
@@ -29,10 +30,13 @@ func (s *Server) Run() error {
 	}
 
 	go func() {
+		s.logger.Infof("Server is listening on PORT: %s", s.cfg.Server.Port)
 		if err := s.echo.StartServer(server); err != nil {
+			s.logger.Errorf("Error starting Server: ", err)
 		}
 	}()
 
+	//todo refactor handle part above
 	v1 := s.echo.Group("/api/cache")
 	v1.GET("", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
@@ -45,6 +49,6 @@ func (s *Server) Run() error {
 	ctx, shutdown := context.WithTimeout(context.Background(), 11*time.Second)
 	defer shutdown()
 
-	log.Print("Server Exited Properly")
+	s.logger.Info("Server Exited Properly")
 	return s.echo.Server.Shutdown(ctx)
 }
