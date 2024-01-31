@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Server ServerConfig
+	Logger Logger
 }
 
 type ServerConfig struct {
@@ -15,6 +16,10 @@ type ServerConfig struct {
 	Port         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+}
+
+type Logger struct {
+	Level string
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -31,6 +36,7 @@ func LoadConfig(filename string) (*Config, error) {
 	var c Config
 	if err := v.Unmarshal(&c); err != nil {
 		log.Fatalf("unable to decode into struct: %v", err)
+		return nil, err
 	}
 	return &c, nil
 }
