@@ -10,7 +10,6 @@ import (
 type Logger interface {
 	InitLogger()
 	Info(args ...interface{})
-	Infof(template string, args ...interface{})
 	Error(args ...interface{})
 	Errorf(template string, args ...interface{})
 }
@@ -66,10 +65,6 @@ func (l *customLogger) InitLogger() {
 
 func (l *customLogger) Info(args ...interface{}) {
 	l.sugarLogger.Info(args...)
-}
-
-func (l *customLogger) Infof(template string, args ...interface{}) {
-	l.sugarLogger.Infof(template, args...)
 }
 
 func (l *customLogger) Error(args ...interface{}) {

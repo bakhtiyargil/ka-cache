@@ -30,17 +30,15 @@ func (s *Server) Run() error {
 	}
 
 	go func() {
-		s.logger.Infof("Server is listening on PORT: %s", s.cfg.Server.Port)
 		if err := s.echo.StartServer(server); err != nil {
 			s.logger.Errorf("Error starting Server: ", err)
 		}
 	}()
 
-	//todo refactor handle part above
-	v1 := s.echo.Group("/api/cache")
-	v1.GET("", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
-	})
+	err := s.MapHandlers(s.echo)
+	if err != nil {
+		os.Exit(1)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

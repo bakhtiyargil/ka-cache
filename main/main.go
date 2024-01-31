@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	startGrpcServer()
+	//startGrpcServer()
 	startDefaultServer()
 }
 
