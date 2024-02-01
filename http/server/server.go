@@ -30,6 +30,7 @@ func (s *Server) Run() error {
 	}
 
 	go func() {
+		s.logger.Errorf("Server starting : %s", s.cfg.Server.Port)
 		if err := s.echo.StartServer(server); err != nil {
 			s.logger.Errorf("Error starting Server: ", err)
 		}

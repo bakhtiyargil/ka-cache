@@ -20,6 +20,7 @@ func main() {
 func startDefaultServer() {
 	lConfig, _ := config.LoadConfig("./config/config-local")
 	loggr := logger.NewCustomLogger(lConfig)
+	loggr.InitLogger()
 	eServer := hs.NewServer(lConfig, loggr)
 	err := eServer.Run()
 	if err != nil {
