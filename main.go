@@ -15,7 +15,7 @@ func main() {
 
 	optsDial = append(optsDial, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	conn, err := grpc.Dial("localhost:5000", optsDial...)
+	conn, err := grpc.Dial("localhost:3000", optsDial...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
