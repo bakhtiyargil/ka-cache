@@ -13,11 +13,16 @@ import (
 )
 
 func main() {
-	//startGrpcServer()
-	startDefaultServer()
+	ch := make(chan string)
+
+	go startGrpcServer(ch)
+	go startDefaultServer(ch)
+
+	<-ch
+	<-ch
 }
 
-func startDefaultServer() {
+func startDefaultServer(ch chan string) {
 	lConfig, _ := config.LoadConfig("./config/config-local")
 	loggr := logger.NewCustomLogger(lConfig)
 	loggr.InitLogger()
@@ -28,8 +33,8 @@ func startDefaultServer() {
 	}
 }
 
-func startGrpcServer() {
-	lis, _ := net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000))
+func startGrpcServer(ch chan string) {
+	lis, _ := net.Listen("tcp", fmt.Sprintf("localhost:%d", 3000))
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterCacheServer(grpcServer, gs.NewServer())
