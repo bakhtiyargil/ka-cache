@@ -1,6 +1,14 @@
 package error
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
+
+var (
+	InternalServerError = errors.New("internal Server Error")
+)
 
 type RestError interface {
 	Status() int
@@ -12,6 +20,25 @@ type RestErrorResponse struct {
 	ErrStatus int         `json:"status,omitempty"`
 	ErrError  string      `json:"error,omitempty"`
 	ErrCauses interface{} `json:"-"`
+}
+
+func NewInternalServerError(causes interface{}) RestError {
+	result := RestErrorResponse{
+		ErrStatus: http.StatusInternalServerError,
+		ErrError:  InternalServerError.Error(),
+		ErrCauses: causes,
+	}
+	return result
+}
+
+func ParseErrors(err error) RestError {
+	switch {
+	default:
+		if restErr, ok := err.(RestError); ok {
+			return restErr
+		}
+		return NewInternalServerError(err)
+	}
 }
 
 func (e RestErrorResponse) Error() string {
@@ -31,4 +58,8 @@ func NewRestErrorResponse(status int, err string, causes interface{}) RestError 
 		ErrStatus: status,
 		ErrError:  err,
 		ErrCauses: causes}
+}
+
+func ErrorResponse(err error) (int, interface{}) {
+	return ParseErrors(err).Status(), ParseErrors(err)
 }
