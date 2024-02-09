@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/cache"
+	httpErr "ka-cache/http/error"
 	"ka-cache/model"
 	"net/http"
 	"strings"
@@ -37,7 +38,7 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	MapCacheRoutes(v1)
 
 	health.GET("", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
+		return c.JSON(http.StatusOK, model.NewSuccessResponse())
 	})
 
 	return nil
@@ -47,6 +48,9 @@ func GetHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		itemKey := c.Param("key")
 		item := cac.Get(itemKey)
+		if item == "" {
+			return c.JSON(httpErr.ErrorResponse(httpErr.NewResourceNotFound("")))
+		}
 		return c.JSON(http.StatusOK, item)
 	}
 }
@@ -54,8 +58,10 @@ func GetHandler() echo.HandlerFunc {
 func PutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		i := &model.Item{}
-		c.Bind(i)
+		if err := c.Bind(i); err != nil {
+			return c.JSON(httpErr.ErrorResponse(err))
+		}
 		cac.Set(i.Key, i.Value)
-		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
+		return c.JSON(http.StatusOK, model.NewSuccessResponse())
 	}
 }

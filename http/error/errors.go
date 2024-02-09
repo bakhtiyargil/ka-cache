@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	InternalServerError = errors.New("internal Server Error")
+	InternalServerError   = errors.New("internal server error")
+	ResourceNotFoundError = errors.New("resource not found error")
 )
 
 type RestError interface {
@@ -20,6 +21,15 @@ type RestErrorResponse struct {
 	ErrStatus int         `json:"status,omitempty"`
 	ErrError  string      `json:"error,omitempty"`
 	ErrCauses interface{} `json:"-"`
+}
+
+func NewResourceNotFound(causes interface{}) RestError {
+	result := RestErrorResponse{
+		ErrStatus: http.StatusNotFound,
+		ErrError:  ResourceNotFoundError.Error(),
+		ErrCauses: causes,
+	}
+	return result
 }
 
 func NewInternalServerError(causes interface{}) RestError {
