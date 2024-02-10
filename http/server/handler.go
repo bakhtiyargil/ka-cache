@@ -51,7 +51,10 @@ func GetHandler() echo.HandlerFunc {
 		if item == "" {
 			return c.JSON(httpErr.ErrorResponse(httpErr.NewResourceNotFound("")))
 		}
-		return c.JSON(http.StatusOK, item)
+		data := model.DataResponse{
+			Data: item,
+		}
+		return c.JSON(http.StatusOK, data)
 	}
 }
 
