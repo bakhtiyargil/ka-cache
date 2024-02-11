@@ -24,15 +24,14 @@ func NewServer(cfg *config.Config, logger logger.Logger) *Server {
 
 func (s *Server) Run() error {
 	server := &http.Server{
-		Addr:         s.cfg.Server.Port,
-		ReadTimeout:  time.Second * s.cfg.Server.ReadTimeout,
-		WriteTimeout: time.Second * s.cfg.Server.WriteTimeout,
+		Addr:         ":" + s.cfg.Server.Default.Port,
+		ReadTimeout:  time.Second * s.cfg.Server.Default.ReadTimeout,
+		WriteTimeout: time.Second * s.cfg.Server.Default.WriteTimeout,
 	}
 
 	go func() {
-		s.logger.Errorf("Server starting : %s", s.cfg.Server.Port)
 		if err := s.echo.StartServer(server); err != nil {
-			s.logger.Errorf("Error starting Server: ", err)
+			s.logger.Errorf("error starting server: ", err)
 		}
 	}()
 
@@ -48,6 +47,6 @@ func (s *Server) Run() error {
 	ctx, shutdown := context.WithTimeout(context.Background(), 11*time.Second)
 	defer shutdown()
 
-	s.logger.Info("Server Exited Properly")
+	s.logger.Info("server exited properly")
 	return s.echo.Server.Shutdown(ctx)
 }

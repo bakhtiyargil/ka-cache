@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"ka-cache/cache"
+	"ka-cache/config"
 	err "ka-cache/http/error"
 	"log"
 )
@@ -17,10 +17,8 @@ func NewServer() *CacheServer {
 	return s
 }
 
-var c = cache.NewCache(5)
-
 func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, error) {
-	c.Set(item.Key, item.Value)
+	config.DefaultCache.Set(item.Key, item.Value)
 	log.Print("item: " + item.Key + " - successfully set")
 	return &pb.Response{
 		Message: "success",
@@ -30,7 +28,7 @@ func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, err
 }
 
 func (s *CacheServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, error) {
-	var item = c.Get(obj.Key)
+	var item = config.DefaultCache.Get(obj.Key)
 	if item == "" {
 		return nil, err.ResourceNotFoundError
 	}

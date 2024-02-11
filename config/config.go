@@ -12,10 +12,19 @@ type Config struct {
 }
 
 type ServerConfig struct {
+	Default DefaultServerConfig
+	Grpc    GrpcServerConfig
+}
+
+type DefaultServerConfig struct {
 	AppVersion   string
 	Port         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+}
+
+type GrpcServerConfig struct {
+	Port string
 }
 
 type Logger struct {

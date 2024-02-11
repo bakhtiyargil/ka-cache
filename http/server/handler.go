@@ -3,14 +3,12 @@ package server
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"ka-cache/cache"
+	"ka-cache/config"
 	httpErr "ka-cache/http/error"
 	"ka-cache/model"
 	"net/http"
 	"strings"
 )
-
-var cac = cache.NewCache(5)
 
 func (s *Server) MapHandlers(e *echo.Echo) error {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -47,7 +45,7 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 func GetHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		itemKey := c.Param("key")
-		item := cac.Get(itemKey)
+		item := config.DefaultCache.Get(itemKey)
 		if item == "" {
 			return c.JSON(httpErr.ErrorResponse(httpErr.NewResourceNotFound("")))
 		}
@@ -64,7 +62,7 @@ func PutHandler() echo.HandlerFunc {
 		if err := c.Bind(i); err != nil {
 			return c.JSON(httpErr.ErrorResponse(err))
 		}
-		cac.Set(i.Key, i.Value)
+		config.DefaultCache.Set(i.Key, i.Value)
 		return c.JSON(http.StatusOK, model.NewSuccessResponse())
 	}
 }
