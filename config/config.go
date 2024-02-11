@@ -17,10 +17,11 @@ type ServerConfig struct {
 }
 
 type DefaultServerConfig struct {
-	AppVersion   string
-	Port         string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	AppVersion     string
+	Port           string
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+	MaxHeaderBytes int
 }
 
 type GrpcServerConfig struct {
