@@ -2,7 +2,8 @@ package server
 
 import (
 	"context"
-	"ka-cache/cache"
+	"ka-cache/config"
+	err "ka-cache/http/error"
 	"log"
 )
 import pb "ka-cache/grpc"
@@ -16,11 +17,9 @@ func NewServer() *CacheServer {
 	return s
 }
 
-var c = cache.NewCache(5)
-
 func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, error) {
-	c.Set(item.Key, item.Value)
-	log.Print("item: " + item.Key + " - successfully set.")
+	config.DefaultCache.Set(item.Key, item.Value)
+	log.Print("item: " + item.Key + " - successfully set")
 	return &pb.Response{
 		Message: "success",
 		Code:    1,
@@ -29,11 +28,14 @@ func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, err
 }
 
 func (s *CacheServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, error) {
-	var data = c.Get(obj.Key)
-	log.Print("item: " + data + " - successfully get.")
+	var item = config.DefaultCache.Get(obj.Key)
+	if item == "" {
+		return nil, err.ResourceNotFoundError
+	}
+	log.Print("item: " + item + " - successfully get")
 	return &pb.Response{
 		Message: "success",
 		Code:    1,
-		Data:    data,
+		Data:    item,
 	}, nil
 }

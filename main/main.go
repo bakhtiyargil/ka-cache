@@ -13,32 +13,32 @@ import (
 )
 
 func main() {
+	lConfig, _ := config.LoadConfig("./config/config-local")
 	ch := make(chan string)
 
-	go startGrpcServer(ch)
-	go startDefaultServer(ch)
+	go startGrpcServer(ch, lConfig)
+	go startDefaultServer(ch, lConfig)
 
 	<-ch
 	<-ch
 }
 
-func startDefaultServer(ch chan string) {
-	lConfig, _ := config.LoadConfig("./config/config-local")
-	loggr := logger.NewCustomLogger(lConfig)
+func startDefaultServer(ch chan string, cnfg *config.Config) {
+	loggr := logger.NewCustomLogger(cnfg)
 	loggr.InitLogger()
-	eServer := hs.NewServer(lConfig, loggr)
+	eServer := hs.NewServer(cnfg, loggr)
 	err := eServer.Run()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
-func startGrpcServer(ch chan string) {
-	lis, _ := net.Listen("tcp", fmt.Sprintf("localhost:%d", 3000))
+func startGrpcServer(ch chan string, cnfg *config.Config) {
+	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", cnfg.Server.Grpc.Port))
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterCacheServer(grpcServer, gs.NewServer())
-	err := grpcServer.Serve(lis)
+	err := grpcServer.Serve(listener)
 	if err != nil {
 		os.Exit(1)
 	}
