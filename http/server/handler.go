@@ -5,12 +5,15 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/config"
 	httpErr "ka-cache/http/error"
+	apiMiddleware "ka-cache/http/middleware"
 	"ka-cache/model"
 	"net/http"
 	"strings"
 )
 
 func (s *Server) MapHandlers(e *echo.Echo) error {
+	amw := apiMiddleware.NewMiddlewareManager(s.cfg, []string{"*"}, s.logger)
+	e.Use(amw.RequestLoggerMiddleware)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXRequestID},

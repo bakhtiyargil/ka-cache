@@ -2,9 +2,12 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"google.golang.org/grpc"
 	"ka-cache/config"
 	err "ka-cache/http/error"
 	"log"
+	"net"
 )
 import pb "ka-cache/grpc"
 
@@ -38,4 +41,13 @@ func (s *CacheServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, er
 		Code:    1,
 		Data:    item,
 	}, nil
+}
+
+func (s *CacheServer) Run(cnfg *config.Config) error {
+	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", cnfg.Server.Grpc.Port))
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+	pb.RegisterCacheServer(grpcServer, s)
+	err1 := grpcServer.Serve(listener)
+	return err1
 }

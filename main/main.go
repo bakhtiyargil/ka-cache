@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"google.golang.org/grpc"
 	"ka-cache/config"
-	pb "ka-cache/grpc"
 	gs "ka-cache/grpc/server"
 	hs "ka-cache/http/server"
 	"ka-cache/pkg/logger"
-	"net"
 	"os"
 )
 
@@ -34,11 +30,7 @@ func startDefaultServer(ch chan string, cnfg *config.Config) {
 }
 
 func startGrpcServer(ch chan string, cnfg *config.Config) {
-	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", cnfg.Server.Grpc.Port))
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterCacheServer(grpcServer, gs.NewServer())
-	err := grpcServer.Serve(listener)
+	err := gs.NewServer().Run(cnfg)
 	if err != nil {
 		os.Exit(1)
 	}

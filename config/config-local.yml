@@ -4,6 +4,7 @@ server:
     Port: 5001
     ReadTimeout: 5
     WriteTimeout: 5
+    MaxHeaderBytes: 1048576
   grpc:
     Port: 5002
 
