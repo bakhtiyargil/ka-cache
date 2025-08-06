@@ -22,7 +22,7 @@ func main() {
 func startDefaultServer(ch chan string, cnfg *config.Config) {
 	loggr := logger.NewCustomLogger(cnfg)
 	loggr.InitLogger()
-	eServer := hs.NewServer(cnfg, loggr)
+	eServer := hs.NewHttpServer(cnfg, loggr)
 	err := eServer.Run()
 	if err != nil {
 		os.Exit(1)
