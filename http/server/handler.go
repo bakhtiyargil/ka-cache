@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Server) MapHandlers(e *echo.Echo) error {
+func (s *HttpServer) MapHandlers(e *echo.Echo) error {
 	amw := apiMiddleware.NewMiddlewareManager(s.cfg, []string{"*"}, s.logger)
 	e.Use(amw.RequestLoggerMiddleware)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{

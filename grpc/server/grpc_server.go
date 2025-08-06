@@ -11,16 +11,20 @@ import (
 )
 import pb "ka-cache/grpc"
 
-type CacheServer struct {
+type GrpcServer struct {
+	cfg       *config.Config
+	isRunning bool
 	pb.UnimplementedCacheServer
 }
 
-func NewServer() *CacheServer {
-	s := &CacheServer{}
+func NewServer(cfg *config.Config) *GrpcServer {
+	s := &GrpcServer{
+		cfg: cfg,
+	}
 	return s
 }
 
-func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, error) {
+func (s *GrpcServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, error) {
 	config.DefaultCache.Set(item.Key, item.Value)
 	log.Print("item: " + item.Key + " - successfully set")
 	return &pb.Response{
@@ -30,7 +34,7 @@ func (s *CacheServer) Put(ctx context.Context, item *pb.Item) (*pb.Response, err
 	}, nil
 }
 
-func (s *CacheServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, error) {
+func (s *GrpcServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, error) {
 	var item = config.DefaultCache.Get(obj.Key)
 	if item == "" {
 		return nil, err.ResourceNotFoundError
@@ -43,11 +47,15 @@ func (s *CacheServer) Get(ctx context.Context, obj *pb.Object) (*pb.Response, er
 	}, nil
 }
 
-func (s *CacheServer) Run(cnfg *config.Config) error {
-	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", cnfg.Server.Grpc.Port))
+func (s *GrpcServer) Run() error {
+	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterCacheServer(grpcServer, s)
 	err1 := grpcServer.Serve(listener)
 	return err1
+}
+
+func (s *GrpcServer) IsRunning() bool {
+	return s.isRunning
 }
