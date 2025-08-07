@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/labstack/echo/v4"
-	"ka-cache/pkg/utils"
+	"ka-cache/utils"
 	"time"
 )
 

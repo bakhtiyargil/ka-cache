@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"ka-cache/config"
-	"ka-cache/pkg/logger"
+	"ka-cache/logger"
 )
 
 type MiddlewareManager struct {

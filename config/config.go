@@ -32,7 +32,7 @@ type Logger struct {
 	Level string
 }
 
-func LoadConfig(filename string) (*Config, error) {
+func LoadConfig(filename string) *Config {
 	v := viper.New()
 	v.SetConfigName(filename)
 	v.AddConfigPath(".")
@@ -40,13 +40,11 @@ func LoadConfig(filename string) (*Config, error) {
 
 	if err := v.ReadInConfig(); err != nil {
 		log.Fatalf("error reading config file: %v", err)
-		return nil, err
 	}
 
 	var c Config
 	if err := v.Unmarshal(&c); err != nil {
-		log.Fatalf("unable to decode into struct: %v", err)
-		return nil, err
+		log.Fatalf("unable to decode config into struct: %v", err)
 	}
-	return &c, nil
+	return &c
 }
