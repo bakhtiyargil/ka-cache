@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/context"
 	"ka-cache/config"
-	"ka-cache/pkg/logger"
+	"ka-cache/logger"
 	"net/http"
 	"os"
 	"os/signal"

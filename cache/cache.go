@@ -1,5 +1,10 @@
 package cache
 
+type Cache interface {
+	Set(key string, value string)
+	Get(key string) string
+}
+
 type node struct {
 	key   string
 	value string
@@ -7,18 +12,25 @@ type node struct {
 	prev  *node
 }
 
-type Cache struct {
-	*cache
-}
-
-type cache struct {
+type SimpleCache struct {
 	cacheMap map[string]*node
 	capacity int
 	head     *node
 	tail     *node
 }
 
-func (c *cache) Set(key string, value string) {
+func NewSimpleCache(cap int) Cache {
+	newCacheMap := make(map[string]*node, cap)
+	cache := SimpleCache{
+		cacheMap: newCacheMap,
+		capacity: cap,
+		head:     nil,
+		tail:     nil,
+	}
+	return &cache
+}
+
+func (c *SimpleCache) Set(key string, value string) {
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.value = value
@@ -38,10 +50,9 @@ func (c *cache) Set(key string, value string) {
 		c.cacheMap[key] = &newNode
 		c.linkFirst(&newNode)
 	}
-
 }
 
-func (c *cache) Get(key string) string {
+func (c *SimpleCache) Get(key string) string {
 	node, ok := c.cacheMap[key]
 	if !ok {
 		return ""
@@ -51,7 +62,7 @@ func (c *cache) Get(key string) string {
 	return node.value
 }
 
-func (c *cache) remove(node *node) {
+func (c *SimpleCache) remove(node *node) {
 	if node == c.head {
 		return
 	} else if node == c.tail {
@@ -67,7 +78,7 @@ func (c *cache) remove(node *node) {
 	}
 }
 
-func (c *cache) linkFirst(newNode *node) {
+func (c *SimpleCache) linkFirst(newNode *node) {
 	oldHead := c.head
 	newNode.prev = nil
 	newNode.next = oldHead
@@ -77,16 +88,4 @@ func (c *cache) linkFirst(newNode *node) {
 	} else {
 		oldHead.prev = newNode
 	}
-}
-
-func NewCache(cap int) *Cache {
-	newCacheMap := make(map[string]*node, cap)
-
-	cache := cache{
-		cacheMap: newCacheMap,
-		capacity: cap,
-		head:     nil,
-		tail:     nil,
-	}
-	return &Cache{&cache}
 }

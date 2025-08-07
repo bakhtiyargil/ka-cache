@@ -2,4 +2,4 @@ package config
 
 import "ka-cache/cache"
 
-var DefaultCache = cache.NewCache(5)
+var SimpleCache = cache.NewSimpleCache(5)
