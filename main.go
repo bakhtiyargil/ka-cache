@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	pb "ka-cache/grpc"
+	grpc2 "ka-cache/server/grpc"
 	"log"
 	"time"
 )
@@ -21,10 +21,10 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := pb.NewCacheClient(conn)
+	client := grpc2.NewCacheClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	response, err := client.Put(ctx, &pb.Item{
+	response, err := client.Put(ctx, &grpc2.Item{
 		Key:   "Isaq",
 		Value: "A",
 	})

@@ -1,15 +1,15 @@
-package main
+package app
 
 import (
 	"ka-cache/config"
-	gs "ka-cache/grpc/server"
-	hs "ka-cache/http/server"
-	"ka-cache/pkg/logger"
+	"ka-cache/logger"
+	gs "ka-cache/server/grpc"
+	hs "ka-cache/server/http/server"
 	"os"
 )
 
 func main() {
-	lConfig, _ := config.LoadConfig("./config/config-local")
+	lConfig := config.LoadConfig("./config/config-local")
 	ch := make(chan string)
 
 	go startGrpcServer(ch, lConfig)
