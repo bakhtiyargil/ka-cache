@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/utils"
 	"time"
 )
@@ -22,5 +23,15 @@ func (mw *MiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) echo
 			requestID, req.Method, req.URL, status, size, s,
 		)
 		return err
+	}
+}
+
+func (mw *MiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins: []string{"*"},
+			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXRequestID},
+		})
+		return next(ctx)
 	}
 }
