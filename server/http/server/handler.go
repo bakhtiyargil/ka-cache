@@ -6,18 +6,14 @@ import (
 	"ka-cache/config"
 	"ka-cache/model"
 	httpErr "ka-cache/server/http/error"
-	apiMiddleware "ka-cache/server/http/middleware"
 	"net/http"
 	"strings"
 )
 
 func (s *HttpServer) MapHandlers(e *echo.Echo) error {
-	amw := apiMiddleware.NewMiddlewareManager(s.cfg, []string{"*"}, s.logger)
+	amw := NewApiMiddlewareManager([]string{"*"}, s.logger)
 	e.Use(amw.RequestLoggerMiddleware)
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXRequestID},
-	}))
+	e.Use(amw.CorsMiddleware)
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		StackSize:         1 << 10, // 1 KB
 		DisablePrintStack: true,
