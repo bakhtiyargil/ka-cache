@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
+	"ka-cache/cache"
 	"ka-cache/config"
 	"ka-cache/server"
-	err "ka-cache/server/http/error"
+	err "ka-cache/server/http"
 	"log"
 	"net"
 )
@@ -17,7 +18,7 @@ type GrpcServer struct {
 	UnimplementedCacheServer
 }
 
-func NewServer(cfg *config.Config) server.Server {
+func NewGrpcServer(cfg *config.Config) server.Server {
 	s := &GrpcServer{
 		cfg: cfg,
 	}
@@ -25,7 +26,7 @@ func NewServer(cfg *config.Config) server.Server {
 }
 
 func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
-	config.SimpleCache.Set(item.Key, item.Value)
+	cache.SimpleCache.Set(item.Key, item.Value)
 	log.Print("item: " + item.Key + " - successfully set")
 	return &Response{
 		Message: "success",
@@ -35,7 +36,7 @@ func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 }
 
 func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
-	var item = config.SimpleCache.Get(obj.Key)
+	var item = cache.SimpleCache.Get(obj.Key)
 	if item == "" {
 		return nil, err.ResourceNotFoundError
 	}
