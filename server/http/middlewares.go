@@ -1,10 +1,9 @@
-package server
+package http
 
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/logger"
-	"ka-cache/utils"
 	"time"
 )
 
@@ -32,7 +31,7 @@ func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) e
 		status := res.Status
 		size := res.Size
 		s := time.Since(start).String()
-		requestID := utils.GetRequestID(ctx)
+		requestID := GetRequestID(ctx)
 
 		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Size: %v, Time: %s",
 			requestID, req.Method, req.URL, status, size, s,
@@ -49,4 +48,8 @@ func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.Handl
 		})
 		return next(ctx)
 	}
+}
+
+func GetRequestID(c echo.Context) string {
+	return c.Response().Header().Get(echo.HeaderXRequestID)
 }
