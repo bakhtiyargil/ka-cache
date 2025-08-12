@@ -1,11 +1,10 @@
-package server
+package http
 
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"ka-cache/config"
+	"ka-cache/cache"
 	"ka-cache/model"
-	httpErr "ka-cache/server/http/error"
 	"net/http"
 	"strings"
 )
@@ -44,9 +43,9 @@ func (s *HttpServer) MapHandlers(e *echo.Echo) error {
 func GetHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		itemKey := c.Param("key")
-		item := config.SimpleCache.Get(itemKey)
+		item := cache.SimpleCache.Get(itemKey)
 		if item == "" {
-			return c.JSON(httpErr.ErrorResponse(httpErr.NewResourceNotFound("")))
+			return c.JSON(ErrorResponse(NewResourceNotFound("")))
 		}
 		data := model.DataResponse{
 			Data: item,
@@ -59,9 +58,9 @@ func PutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		i := &model.Item{}
 		if err := c.Bind(i); err != nil {
-			return c.JSON(httpErr.ErrorResponse(err))
+			return c.JSON(ErrorResponse(err))
 		}
-		config.SimpleCache.Set(i.Key, i.Value)
+		cache.SimpleCache.Set(i.Key, i.Value)
 		return c.JSON(http.StatusOK, model.NewSuccessResponse())
 	}
 }

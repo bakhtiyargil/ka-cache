@@ -3,8 +3,8 @@ package app
 import (
 	"ka-cache/config"
 	"ka-cache/logger"
-	gs "ka-cache/server/grpc"
-	hs "ka-cache/server/http/server"
+	"ka-cache/server/grpc"
+	"ka-cache/server/http"
 	"os"
 )
 
@@ -22,7 +22,7 @@ func main() {
 func startDefaultServer(ch chan string, cnfg *config.Config) {
 	loggr := logger.NewCustomLogger(cnfg)
 	loggr.InitLogger()
-	eServer := hs.NewHttpServer(cnfg, loggr)
+	eServer := http.NewHttpServer(cnfg, loggr)
 	err := eServer.Run()
 	if err != nil {
 		os.Exit(1)
@@ -30,7 +30,7 @@ func startDefaultServer(ch chan string, cnfg *config.Config) {
 }
 
 func startGrpcServer(ch chan string, cnfg *config.Config) {
-	err := gs.NewServer().Run(cnfg)
+	err := grpc.NewGrpcServer(cnfg).Run()
 	if err != nil {
 		os.Exit(1)
 	}

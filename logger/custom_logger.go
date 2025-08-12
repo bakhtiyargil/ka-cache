@@ -20,7 +20,7 @@ type customLogger struct {
 	sugarLogger *zap.SugaredLogger
 }
 
-func NewCustomLogger(cfg *config.Config) *customLogger {
+func NewCustomLogger(cfg *config.Config) Logger {
 	return &customLogger{cfg: cfg}
 }
 
