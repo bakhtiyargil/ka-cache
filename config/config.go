@@ -1,8 +1,6 @@
 package config
 
 import (
-	"github.com/spf13/viper"
-	"log"
 	"time"
 )
 
@@ -30,21 +28,4 @@ type GrpcServerConfig struct {
 
 type Logger struct {
 	Level string
-}
-
-func LoadConfig(filename string) *Config {
-	v := viper.New()
-	v.SetConfigName(filename)
-	v.AddConfigPath(".")
-	v.SetConfigType("yml")
-
-	if err := v.ReadInConfig(); err != nil {
-		log.Fatalf("error reading config file: %v", err)
-	}
-
-	var c Config
-	if err := v.Unmarshal(&c); err != nil {
-		log.Fatalf("unable to decode config into struct: %v", err)
-	}
-	return &c
 }

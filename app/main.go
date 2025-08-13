@@ -1,36 +1,30 @@
 package main
 
 import (
-	"ka-cache/config"
-	"ka-cache/logger"
+	"ka-cache/bootstrap"
 	"ka-cache/server/grpc"
 	"ka-cache/server/http"
 	"os"
 )
 
 func main() {
-	lConfig := config.LoadConfig("./config/config-local")
 	ch := make(chan string)
-
-	go startGrpcServer(ch, lConfig)
-	go startDefaultServer(ch, lConfig)
-
+	go startGrpcServer(ch)
+	go startDefaultServer(ch)
 	<-ch
 	<-ch
 }
 
-func startDefaultServer(ch chan string, cnfg *config.Config) {
-	loggr := logger.NewCustomLogger(cnfg)
-	loggr.InitLogger()
-	eServer := http.NewHttpServer(cnfg, loggr)
+func startDefaultServer(ch chan string) {
+	eServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger)
 	err := eServer.Run()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
-func startGrpcServer(ch chan string, cnfg *config.Config) {
-	err := grpc.NewGrpcServer(cnfg).Run()
+func startGrpcServer(ch chan string) {
+	err := grpc.NewGrpcServer(bootstrap.App.Config).Run()
 	if err != nil {
 		os.Exit(1)
 	}
