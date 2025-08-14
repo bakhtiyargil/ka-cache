@@ -12,18 +12,18 @@ import (
 	"time"
 )
 
-type HttpServer struct {
+type SimpleHttpServer struct {
 	echo      *echo.Echo
 	cfg       *config.Config
 	logger    logger.Logger
 	isRunning bool
 }
 
-func NewHttpServer(cfg *config.Config, logger logger.Logger) *HttpServer {
-	return &HttpServer{echo: echo.New(), cfg: cfg, logger: logger}
+func NewHttpServer(cfg *config.Config, logger logger.Logger) *SimpleHttpServer {
+	return &SimpleHttpServer{echo: echo.New(), cfg: cfg, logger: logger}
 }
 
-func (s *HttpServer) Run() error {
+func (s *SimpleHttpServer) Run() error {
 	server := &http.Server{
 		Addr:           ":" + s.cfg.Server.Default.Port,
 		ReadTimeout:    time.Second * s.cfg.Server.Default.ReadTimeout,
@@ -32,9 +32,9 @@ func (s *HttpServer) Run() error {
 	}
 
 	go func() {
-		s.logger.Infof("HttpServer is listening on PORT: %s", s.cfg.Server.Default.Port)
+		s.logger.Infof("SimpleHttpServer is listening on PORT: %s", s.cfg.Server.Default.Port)
 		if err := s.echo.StartServer(server); err != nil {
-			s.logger.Errorf("Error starting HttpServer: ", err)
+			s.logger.Errorf("Error starting SimpleHttpServer: ", err)
 			os.Exit(1)
 		}
 	}()
@@ -51,10 +51,10 @@ func (s *HttpServer) Run() error {
 	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdown()
 
-	s.logger.Info("HttpServer Exited Properly")
+	s.logger.Info("SimpleHttpServer Exited Properly")
 	return s.echo.Server.Shutdown(ctx)
 }
 
-func (s *HttpServer) IsRunning() bool {
+func (s *SimpleHttpServer) IsRunning() bool {
 	return s.isRunning
 }
