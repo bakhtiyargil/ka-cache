@@ -9,12 +9,12 @@ import (
 	"strings"
 )
 
-func (s *HttpServer) MapHandlers(e *echo.Echo) error {
+func (s *SimpleHttpServer) MapHandlers(e *echo.Echo) error {
 	amw := NewApiMiddlewareManager([]string{"*"}, s.logger)
 	e.Use(amw.RequestLoggerMiddleware)
 	e.Use(amw.CorsMiddleware)
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		StackSize:         1 << 10, // 1 KB
+		StackSize:         1 << 10,
 		DisablePrintStack: true,
 		DisableStackAll:   true,
 	}))
@@ -45,7 +45,8 @@ func GetHandler() echo.HandlerFunc {
 		itemKey := c.Param("key")
 		item := cache.SimpleCache.Get(itemKey)
 		if item == "" {
-			return c.JSON(ErrorResponse(NewResourceNotFound("")))
+			err := NewResourceNotFound("")
+			return c.JSON(err.Status(), err)
 		}
 		data := model.DataResponse{
 			Data: item,
@@ -58,7 +59,8 @@ func PutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		i := &model.Item{}
 		if err := c.Bind(i); err != nil {
-			return c.JSON(ErrorResponse(err))
+			internalError := NewInternalServerError(err.Error())
+			return c.JSON(internalError.Status(), internalError)
 		}
 		cache.SimpleCache.Set(i.Key, i.Value)
 		return c.JSON(http.StatusOK, model.NewSuccessResponse())
