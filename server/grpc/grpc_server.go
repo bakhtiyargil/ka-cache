@@ -48,7 +48,7 @@ func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	}, nil
 }
 
-func (s *GrpcServer) Run() error {
+func (s *GrpcServer) Start() error {
 	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
@@ -57,6 +57,6 @@ func (s *GrpcServer) Run() error {
 	return err1
 }
 
-func (s *GrpcServer) IsRunning() bool {
+func (s *GrpcServer) Running() bool {
 	return s.isRunning
 }

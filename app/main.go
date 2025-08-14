@@ -8,20 +8,17 @@ import (
 )
 
 func main() {
-	go startDefaultServer()
+	go startHttpServer()
 	startGrpcServer()
 }
 
-func startDefaultServer() {
+func startHttpServer() {
 	eServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger)
-	err := eServer.Run()
-	if err != nil {
-		os.Exit(1)
-	}
+	eServer.Start()
 }
 
 func startGrpcServer() {
-	err := grpc.NewGrpcServer(bootstrap.App.Config).Run()
+	err := grpc.NewGrpcServer(bootstrap.App.Config).Start()
 	if err != nil {
 		os.Exit(1)
 	}
