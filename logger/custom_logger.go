@@ -9,6 +9,8 @@ type Logger interface {
 	Infof(template string, args ...interface{})
 	Error(args ...interface{})
 	Errorf(template string, args ...interface{})
+	Fatal(args ...interface{})
+	Fatalf(template string, args ...interface{})
 }
 
 type CustomLogger struct {
@@ -29,4 +31,12 @@ func (l *CustomLogger) Error(args ...interface{}) {
 
 func (l *CustomLogger) Errorf(template string, args ...interface{}) {
 	l.SugarLogger.Errorf(template, args...)
+}
+
+func (l *CustomLogger) Fatal(args ...interface{}) {
+	l.SugarLogger.Fatal(args...)
+}
+
+func (l *CustomLogger) Fatalf(template string, args ...interface{}) {
+	l.SugarLogger.Fatalf(template, args...)
 }

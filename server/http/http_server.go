@@ -2,9 +2,11 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/net/context"
 	"ka-cache/config"
 	"ka-cache/logger"
+	"ka-cache/model"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,35 +15,40 @@ import (
 )
 
 type SimpleHttpServer struct {
+	server    *http.Server
 	echo      *echo.Echo
-	cfg       *config.Config
 	logger    logger.Logger
 	isRunning bool
 }
 
 func NewHttpServer(cfg *config.Config, logger logger.Logger) *SimpleHttpServer {
-	return &SimpleHttpServer{echo: echo.New(), cfg: cfg, logger: logger}
+	server := &http.Server{
+		Addr:           ":" + cfg.Server.Default.Port,
+		ReadTimeout:    time.Second * cfg.Server.Default.ReadTimeout,
+		WriteTimeout:   time.Second * cfg.Server.Default.WriteTimeout,
+		MaxHeaderBytes: cfg.Server.Default.MaxHeaderBytes,
+	}
+	return &SimpleHttpServer{
+		server: server,
+		echo:   echo.New(),
+		logger: logger,
+	}
 }
 
-func (s *SimpleHttpServer) Run() error {
-	server := &http.Server{
-		Addr:           ":" + s.cfg.Server.Default.Port,
-		ReadTimeout:    time.Second * s.cfg.Server.Default.ReadTimeout,
-		WriteTimeout:   time.Second * s.cfg.Server.Default.WriteTimeout,
-		MaxHeaderBytes: s.cfg.Server.Default.MaxHeaderBytes,
+func (s *SimpleHttpServer) Start() {
+	if s.Running() {
+		s.logger.Fatal("http server is already running")
 	}
-
 	go func() {
-		s.logger.Infof("SimpleHttpServer is listening on PORT: %s", s.cfg.Server.Default.Port)
-		if err := s.echo.StartServer(server); err != nil {
-			s.logger.Errorf("Error starting SimpleHttpServer: ", err)
-			os.Exit(1)
+		s.logger.Infof("http server is listening on port: %s", s.server.Addr)
+		if err := s.echo.StartServer(s.server); err != nil {
+			s.logger.Fatalf("error starting http server: %v", err)
 		}
 	}()
 
-	if err := s.MapHandlers(s.echo); err != nil {
-		return err
-	}
+	amw := NewApiMiddlewareManager([]string{"*"}, s.logger)
+	s.appendMiddleware(s.echo, amw)
+	s.appendRoutes(s.echo)
 	s.isRunning = true
 
 	quit := make(chan os.Signal, 1)
@@ -51,10 +58,39 @@ func (s *SimpleHttpServer) Run() error {
 	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdown()
 
-	s.logger.Info("SimpleHttpServer Exited Properly")
-	return s.echo.Server.Shutdown(ctx)
+	s.logger.Info("http server exited properly")
+	err := s.echo.Server.Shutdown(ctx)
+	if err != nil {
+		s.logger.Fatalf("error shutting down http server: %v", err)
+	}
 }
 
-func (s *SimpleHttpServer) IsRunning() bool {
+func (s *SimpleHttpServer) Running() bool {
 	return s.isRunning
+}
+
+func (s *SimpleHttpServer) appendMiddleware(e *echo.Echo, manager MiddlewareManager) {
+	e.Use(manager.RequestLoggerMiddleware)
+	e.Use(manager.CorsMiddleware)
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		StackSize:         1 << 10,
+		DisablePrintStack: true,
+		DisableStackAll:   true,
+	}))
+	e.Use(middleware.RequestID())
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 5,
+	}))
+	e.Use(middleware.Secure())
+	e.Use(middleware.BodyLimit("2M"))
+}
+
+func (s *SimpleHttpServer) appendRoutes(e *echo.Echo) {
+	base := e.Group("/tests")
+	base.GET("/:key", GetHandler())
+	base.PUT("/", PutHandler())
+	health := base.Group("/health")
+	health.GET("", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, model.NewSuccessResponse())
+	})
 }
