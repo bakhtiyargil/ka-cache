@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"ka-cache/config"
 	"ka-cache/logger"
-	"ka-cache/model"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +15,7 @@ import (
 
 type SimpleHttpServer struct {
 	server    *http.Server
+	handler   Handler
 	echo      *echo.Echo
 	logger    logger.Logger
 	isRunning bool
@@ -86,11 +86,8 @@ func (s *SimpleHttpServer) appendMiddleware(e *echo.Echo, manager MiddlewareMana
 }
 
 func (s *SimpleHttpServer) appendRoutes(e *echo.Echo) {
-	base := e.Group("/tests")
-	base.GET("/:key", GetHandler())
-	base.PUT("/", PutHandler())
+	base := e.Group("/cache")
+	s.handler.mapBaseRouteHandlers(base)
 	health := base.Group("/health")
-	health.GET("", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, model.NewSuccessResponse())
-	})
+	s.handler.mapHealthRouteHandlers(health)
 }

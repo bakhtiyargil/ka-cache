@@ -4,7 +4,6 @@ import (
 	"ka-cache/bootstrap"
 	"ka-cache/server/grpc"
 	"ka-cache/server/http"
-	"os"
 )
 
 func main() {
@@ -13,13 +12,11 @@ func main() {
 }
 
 func startHttpServer() {
-	eServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger)
-	eServer.Start()
+	hServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger)
+	hServer.Start()
 }
 
 func startGrpcServer() {
-	err := grpc.NewGrpcServer(bootstrap.App.Config).Start()
-	if err != nil {
-		os.Exit(1)
-	}
+	gServer := grpc.NewGrpcServer(bootstrap.App.Config, bootstrap.App.Logger)
+	gServer.Start()
 }

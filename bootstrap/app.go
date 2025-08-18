@@ -24,6 +24,6 @@ func init() {
 
 func AppInit() {
 	App = &Application{}
-	App.Config = LoadConfig(CfgFilePath)
-	App.Logger = InitLogger()
+	App.Config = loadConfig(CfgFilePath)
+	App.Logger = initLogger()
 }

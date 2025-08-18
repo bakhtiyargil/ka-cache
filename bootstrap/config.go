@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func LoadConfig(filename string) *config.Config {
+func loadConfig(filename string) *config.Config {
 	v := viper.New()
 	v.SetConfigName(filename)
 	v.AddConfigPath(".")
