@@ -21,7 +21,7 @@ type SimpleHttpServer struct {
 	isRunning bool
 }
 
-func NewHttpServer(cfg *config.Config, logger logger.Logger) *SimpleHttpServer {
+func NewHttpServer(cfg *config.Config, logger logger.Logger, handler Handler) *SimpleHttpServer {
 	server := &http.Server{
 		Addr:           ":" + cfg.Server.Default.Port,
 		ReadTimeout:    time.Second * cfg.Server.Default.ReadTimeout,
@@ -29,9 +29,10 @@ func NewHttpServer(cfg *config.Config, logger logger.Logger) *SimpleHttpServer {
 		MaxHeaderBytes: cfg.Server.Default.MaxHeaderBytes,
 	}
 	return &SimpleHttpServer{
-		server: server,
-		echo:   echo.New(),
-		logger: logger,
+		server:  server,
+		handler: handler,
+		echo:    echo.New(),
+		logger:  logger,
 	}
 }
 
