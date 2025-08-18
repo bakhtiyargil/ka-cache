@@ -17,6 +17,10 @@ type CacheHandler struct {
 	logger logger.Logger
 }
 
+func NewCacheHandler() Handler {
+	return &CacheHandler{}
+}
+
 func (h *CacheHandler) mapHealthRouteHandlers(health *echo.Group) {
 	health.GET("", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, model.NewSuccessResponse())
