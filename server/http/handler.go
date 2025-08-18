@@ -41,7 +41,7 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 		return c.JSON(http.StatusOK, data)
 	})
 
-	base.PUT("/", func(c echo.Context) error {
+	base.PUT("", func(c echo.Context) error {
 		i := &model.Item{}
 		if err := c.Bind(i); err != nil {
 			internalError := NewInternalServerError(err.Error())
