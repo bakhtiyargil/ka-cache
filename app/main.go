@@ -12,7 +12,7 @@ func main() {
 }
 
 func startHttpServer() {
-	hServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger)
+	hServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger, http.NewCacheHandler())
 	hServer.Start()
 }
 
