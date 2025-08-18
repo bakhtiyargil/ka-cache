@@ -6,27 +6,30 @@ import (
 	"google.golang.org/grpc"
 	"ka-cache/cache"
 	"ka-cache/config"
+	"ka-cache/logger"
 	"ka-cache/server"
-	err "ka-cache/server/http"
+	"ka-cache/server/http"
 	"log"
 	"net"
 )
 
 type GrpcServer struct {
 	cfg       *config.Config
+	logger    logger.Logger
 	isRunning bool
 	UnimplementedCacheServer
 }
 
-func NewGrpcServer(cfg *config.Config) server.Server {
+func NewGrpcServer(cfg *config.Config, logger logger.Logger) server.Server {
 	s := &GrpcServer{
-		cfg: cfg,
+		cfg:    cfg,
+		logger: logger,
 	}
 	return s
 }
 
 func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
-	cache.SimpleCache.Set(item.Key, item.Value)
+	cache.SimpleCache.Put(item.Key, item.Value)
 	log.Print("item: " + item.Key + " - successfully set")
 	return &Response{
 		Message: "success",
@@ -38,7 +41,7 @@ func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	var item = cache.SimpleCache.Get(obj.Key)
 	if item == "" {
-		return nil, err.ResourceNotFoundError
+		return nil, http.ResourceNotFoundError
 	}
 	log.Print("item: " + item + " - successfully get")
 	return &Response{
@@ -48,13 +51,15 @@ func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	}, nil
 }
 
-func (s *GrpcServer) Start() error {
+func (s *GrpcServer) Start() {
 	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	RegisterCacheServer(grpcServer, s)
-	err1 := grpcServer.Serve(listener)
-	return err1
+	err := grpcServer.Serve(listener)
+	if err != nil {
+		s.logger.Fatalf("failed to start grpc server: %v", err)
+	}
 }
 
 func (s *GrpcServer) Running() bool {

@@ -1,6 +1,6 @@
 package server
 
 type Server interface {
-	Start() error
+	Start()
 	Running() bool
 }

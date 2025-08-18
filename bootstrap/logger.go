@@ -13,7 +13,7 @@ var loggerLevelMap = map[string]zapcore.Level{
 	"error": zapcore.ErrorLevel,
 }
 
-func InitLogger() logger.Logger {
+func initLogger() logger.Logger {
 	customLogger := &logger.CustomLogger{}
 	logLevel := getLoggerLevel(App.Config)
 	logWriter := zapcore.AddSync(os.Stderr)

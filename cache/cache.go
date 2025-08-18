@@ -3,7 +3,7 @@ package cache
 var SimpleCache = NewSimpleCache(128)
 
 type Cache interface {
-	Set(key string, value string)
+	Put(key string, value string)
 	Get(key string) string
 }
 
@@ -32,7 +32,7 @@ func NewSimpleCache(cap int) Cache {
 	return &cache
 }
 
-func (c *simpleCache) Set(key string, value string) {
+func (c *simpleCache) Put(key string, value string) {
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.value = value
