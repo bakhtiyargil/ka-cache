@@ -16,6 +16,7 @@ import (
 type SimpleHttpServer struct {
 	server    *http.Server
 	handler   Handler
+	cfg       *config.Config
 	echo      *echo.Echo
 	logger    logger.Logger
 	isRunning bool
@@ -31,6 +32,7 @@ func NewHttpServer(cfg *config.Config, logger logger.Logger, handler Handler) *S
 	return &SimpleHttpServer{
 		server:  server,
 		handler: handler,
+		cfg:     cfg,
 		echo:    echo.New(),
 		logger:  logger,
 	}
@@ -47,7 +49,7 @@ func (s *SimpleHttpServer) Start() {
 		}
 	}()
 
-	amw := NewApiMiddlewareManager([]string{"*"}, s.logger)
+	amw := NewApiMiddlewareManager(s.cfg.Server.Default.AllowOrigins, s.logger)
 	s.appendMiddleware(s.echo, amw)
 	s.appendRoutes(s.echo)
 	s.isRunning = true
@@ -71,19 +73,28 @@ func (s *SimpleHttpServer) Running() bool {
 }
 
 func (s *SimpleHttpServer) appendMiddleware(e *echo.Echo, manager MiddlewareManager) {
-	e.Use(manager.RequestLoggerMiddleware)
-	e.Use(manager.CorsMiddleware)
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		StackSize:         1 << 10,
 		DisablePrintStack: true,
 		DisableStackAll:   true,
 	}))
-	e.Use(middleware.RequestID())
-	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-		Level: 5,
+	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XSSProtection:         middleware.DefaultSecureConfig.XSSProtection,
+		ContentTypeNosniff:    middleware.DefaultSecureConfig.ContentTypeNosniff,
+		XFrameOptions:         middleware.DefaultSecureConfig.XFrameOptions,
+		HSTSMaxAge:            31536000,
+		HSTSExcludeSubdomains: false,
+		HSTSPreloadEnabled:    true,
+		ContentSecurityPolicy: "default-src 'self'",
+		ReferrerPolicy:        "strict-origin-when-cross-origin",
 	}))
-	e.Use(middleware.Secure())
+
+	e.Use(middleware.RequestID())
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
 	e.Use(middleware.BodyLimit("2M"))
+
+	e.Use(manager.RequestLoggerMiddleware)
+	e.Use(manager.CorsMiddleware)
 }
 
 func (s *SimpleHttpServer) appendRoutes(e *echo.Echo) {
