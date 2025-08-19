@@ -15,17 +15,18 @@ type ServerConfig struct {
 }
 
 type DefaultServerConfig struct {
-	AppVersion     string
-	Port           string
-	ReadTimeout    time.Duration
-	WriteTimeout   time.Duration
-	MaxHeaderBytes int
+	AppVersion     string        `yaml:"appVersion"`
+	Port           string        `yaml:"port"`
+	ReadTimeout    time.Duration `yaml:"readTimeout"`
+	WriteTimeout   time.Duration `yaml:"writeTimeout"`
+	MaxHeaderBytes int           `yaml:"maxHeaderBytes"`
+	AllowOrigins   []string      `yaml:"allowOrigins"`
 }
 
 type GrpcServerConfig struct {
-	Port string
+	Port string `yaml:"port"`
 }
 
 type Logger struct {
-	Level string
+	Level string `yaml:"level"`
 }

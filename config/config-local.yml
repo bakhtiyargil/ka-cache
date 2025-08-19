@@ -1,12 +1,13 @@
 server:
   default:
-    AppVersion: 1.0.0
-    Port: 5001
-    ReadTimeout: 5
-    WriteTimeout: 5
-    MaxHeaderBytes: 1048576
+    appVersion: 1.0.0
+    port: 5001
+    readTimeout: 5
+    writeTimeout: 5
+    maxHeaderBytes: 1048576
+    allowOrigins: "*"
   grpc:
-    Port: 5002
+    port: 5002
 
 logger:
   level: info
