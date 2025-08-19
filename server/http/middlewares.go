@@ -13,12 +13,12 @@ type MiddlewareManager interface {
 }
 
 type ApiMiddlewareManager struct {
-	origins []string
-	logger  logger.Logger
+	allowOrigins []string
+	logger       logger.Logger
 }
 
 func NewApiMiddlewareManager(origins []string, logger logger.Logger) MiddlewareManager {
-	return &ApiMiddlewareManager{origins: origins, logger: logger}
+	return &ApiMiddlewareManager{allowOrigins: origins, logger: logger}
 }
 
 func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -43,8 +43,14 @@ func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) e
 func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		middleware.CORSWithConfig(middleware.CORSConfig{
-			AllowOrigins: mw.origins,
-			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXRequestID},
+			AllowOrigins: mw.allowOrigins,
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderXRequestID,
+			},
+			ExposeHeaders: []string{echo.HeaderXRequestID},
 		})
 		return next(ctx)
 	}
