@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/labstack/echo/v4"
 	"ka-cache/cache"
-	"ka-cache/logger"
 	"ka-cache/model"
 	"net/http"
 )
@@ -14,11 +13,13 @@ type Handler interface {
 }
 
 type CacheHandler struct {
-	logger logger.Logger
+	cache cache.Cache
 }
 
-func NewCacheHandler() Handler {
-	return &CacheHandler{}
+func NewCacheHandler(cache cache.Cache) Handler {
+	return &CacheHandler{
+		cache: cache,
+	}
 }
 
 func (h *CacheHandler) mapHealthRouteHandlers(health *echo.Group) {
@@ -30,7 +31,7 @@ func (h *CacheHandler) mapHealthRouteHandlers(health *echo.Group) {
 func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 	base.GET("/:key", func(c echo.Context) error {
 		itemKey := c.Param("key")
-		item := cache.SimpleCache.Get(itemKey)
+		item := h.cache.Get(itemKey)
 		if item == "" {
 			err := NewResourceNotFound("")
 			return c.JSON(err.Status(), err)
@@ -47,7 +48,7 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 			internalError := NewInternalServerError(err.Error())
 			return c.JSON(internalError.Status(), internalError)
 		}
-		cache.SimpleCache.Put(i.Key, i.Value)
+		h.cache.Put(i.Key, i.Value)
 		return c.JSON(http.StatusOK, model.NewSuccessResponse())
 	})
 }
