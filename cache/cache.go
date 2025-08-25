@@ -1,7 +1,5 @@
 package cache
 
-var SimpleCache = NewSimpleCache(128)
-
 type Cache interface {
 	Put(key string, value string)
 	Get(key string) string
@@ -14,16 +12,16 @@ type node struct {
 	prev  *node
 }
 
-type simpleCache struct {
+type LruCache struct {
 	cacheMap map[string]*node
 	capacity int
 	head     *node
 	tail     *node
 }
 
-func NewSimpleCache(cap int) Cache {
+func NewLruCache(cap int) Cache {
 	newCacheMap := make(map[string]*node, cap)
-	cache := simpleCache{
+	cache := LruCache{
 		cacheMap: newCacheMap,
 		capacity: cap,
 		head:     nil,
@@ -32,7 +30,7 @@ func NewSimpleCache(cap int) Cache {
 	return &cache
 }
 
-func (c *simpleCache) Put(key string, value string) {
+func (c *LruCache) Put(key string, value string) {
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.value = value
@@ -54,7 +52,7 @@ func (c *simpleCache) Put(key string, value string) {
 	}
 }
 
-func (c *simpleCache) Get(key string) string {
+func (c *LruCache) Get(key string) string {
 	node, ok := c.cacheMap[key]
 	if !ok {
 		return ""
@@ -64,30 +62,36 @@ func (c *simpleCache) Get(key string) string {
 	return node.value
 }
 
-func (c *simpleCache) remove(node *node) {
-	if node == c.head {
+func (c *LruCache) remove(oldNode *node) {
+	if oldNode == c.head && oldNode == c.tail {
+		oldNode.next = nil
+		oldNode.prev = nil
+		c.head = nil
 		return
-	} else if node == c.tail {
-		prev := node.prev
-		prev.next = node
-		node.next = nil
-		c.tail = prev
+	} else if oldNode == c.head {
+		c.head = oldNode.prev
+		c.head.next = nil
+		return
+	} else if oldNode == c.tail {
+		next := oldNode.next
+		next.prev = nil
+		c.tail = next
 	} else {
-		prev := node.prev
-		next := node.next
+		prev := oldNode.prev
+		next := oldNode.next
 		prev.next = next
 		next.prev = prev
 	}
 }
 
-func (c *simpleCache) linkFirst(newNode *node) {
+func (c *LruCache) linkFirst(newNode *node) {
 	oldHead := c.head
-	newNode.prev = nil
-	newNode.next = oldHead
+	newNode.prev = oldHead
+	newNode.next = nil
 	c.head = newNode
 	if oldHead == nil {
 		c.tail = newNode
 	} else {
-		oldHead.prev = newNode
+		oldHead.next = newNode
 	}
 }

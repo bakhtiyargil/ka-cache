@@ -7,6 +7,7 @@ import (
 type Config struct {
 	Server ServerConfig
 	Logger Logger
+	Cache  Cache
 }
 
 type ServerConfig struct {
@@ -29,4 +30,8 @@ type GrpcServerConfig struct {
 
 type Logger struct {
 	Level string `yaml:"level"`
+}
+
+type Cache struct {
+	Capacity int `mapstructure:"cap"`
 }
