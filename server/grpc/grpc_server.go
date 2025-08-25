@@ -17,19 +17,21 @@ type GrpcServer struct {
 	cfg       *config.Config
 	logger    logger.Logger
 	isRunning bool
+	cache     cache.Cache
 	UnimplementedCacheServer
 }
 
-func NewGrpcServer(cfg *config.Config, logger logger.Logger) server.Server {
+func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache) server.Server {
 	s := &GrpcServer{
 		cfg:    cfg,
 		logger: logger,
+		cache:  cache,
 	}
 	return s
 }
 
 func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
-	cache.SimpleCache.Put(item.Key, item.Value)
+	s.cache.Put(item.Key, item.Value)
 	log.Print("item: " + item.Key + " - successfully set")
 	return &Response{
 		Message: "success",
@@ -39,7 +41,7 @@ func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 }
 
 func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
-	var item = cache.SimpleCache.Get(obj.Key)
+	var item = s.cache.Get(obj.Key)
 	if item == "" {
 		return nil, http.ResourceNotFoundError
 	}

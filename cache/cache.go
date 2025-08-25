@@ -1,7 +1,5 @@
 package cache
 
-var SimpleCache = NewSimpleCache(128)
-
 type Cache interface {
 	Put(key string, value string)
 	Get(key string) string
@@ -21,7 +19,7 @@ type LruCache struct {
 	tail     *node
 }
 
-func NewSimpleCache(cap int) Cache {
+func NewLruCache(cap int) Cache {
 	newCacheMap := make(map[string]*node, cap)
 	cache := LruCache{
 		cacheMap: newCacheMap,
@@ -69,6 +67,10 @@ func (c *LruCache) remove(oldNode *node) {
 		oldNode.next = nil
 		oldNode.prev = nil
 		c.head = nil
+		return
+	} else if oldNode == c.head {
+		c.head = oldNode.prev
+		c.head.next = nil
 		return
 	} else if oldNode == c.tail {
 		next := oldNode.next
