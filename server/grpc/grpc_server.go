@@ -31,7 +31,10 @@ func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache) 
 }
 
 func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
-	s.cache.Put(item.Key, item.Value)
+	err := s.cache.Put(item.Key, item.Value, item.Ttl)
+	if err != nil {
+		return nil, http.InternalServerError
+	}
 	log.Print("item: " + item.Key + " - successfully set")
 	return &Response{
 		Message: "success",
@@ -41,15 +44,15 @@ func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 }
 
 func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
-	var item = s.cache.Get(obj.Key)
-	if item == "" {
+	var entry, ok = s.cache.Get(obj.Key)
+	if !ok {
 		return nil, http.ResourceNotFoundError
 	}
-	log.Print("item: " + item + " - successfully get")
+	s.logger.Info("item: " + obj.Key + " - successfully retrieved")
 	return &Response{
 		Message: "success",
 		Code:    1,
-		Data:    item,
+		Data:    entry.Value,
 	}, nil
 }
 
