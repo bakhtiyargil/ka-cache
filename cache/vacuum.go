@@ -1,0 +1,46 @@
+package cache
+
+import (
+	"time"
+)
+
+type SelfClearingCache interface {
+	StartCleanup(interval time.Duration)
+	StopCleanup()
+	CleanupChannel() chan bool
+	DeleteExpiredEntries()
+	Cache
+}
+
+func (c *LruCache) StartCleanup(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			c.logger.Info("cache cleanup started")
+			c.DeleteExpiredEntries()
+			c.logger.Info("cache cleanup completed")
+		case <-c.CleanupChannel():
+			return
+		}
+	}
+}
+
+func (c *LruCache) StopCleanup() {
+	close(c.CleanupChannel())
+}
+
+func (c *LruCache) DeleteExpiredEntries() {
+	now := time.Now()
+	for key, item := range c.cacheMap {
+		if item.expiresAt.Before(now) {
+			delete(c.cacheMap, key)
+			c.unlink(item)
+		}
+	}
+}
+
+func (c *LruCache) CleanupChannel() chan bool {
+	return c.cleanupStop
+}
