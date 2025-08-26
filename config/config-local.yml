@@ -13,4 +13,5 @@ logger:
   level: info
 
 cache:
-  cap: 3
+  cap: 128
+  cleanupInterval: 60
