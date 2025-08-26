@@ -5,10 +5,12 @@ import (
 	"ka-cache/cache"
 	"ka-cache/server/grpc"
 	"ka-cache/server/http"
+	"time"
 )
 
 func main() {
-	c := cache.NewLruCache(bootstrap.App.Config.Cache.Capacity)
+	c := cache.NewLruCache(bootstrap.App.Config.Cache.Capacity, bootstrap.App.Logger)
+	go c.StartCleanup(bootstrap.App.Config.Cache.CleanupInterval * time.Second)
 	go startHttpServer(c)
 	startGrpcServer(c)
 }

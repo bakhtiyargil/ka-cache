@@ -33,5 +33,6 @@ type Logger struct {
 }
 
 type Cache struct {
-	Capacity int `mapstructure:"cap"`
+	Capacity        int           `mapstructure:"cap"`
+	CleanupInterval time.Duration `mapstructure:"cleanupInterval"`
 }
