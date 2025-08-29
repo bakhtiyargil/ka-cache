@@ -83,7 +83,8 @@ func (c *LruCache) Get(key string) (*Entry, bool) {
 		c.deleteAndUnlink(cacheEntry)
 		return nil, false
 	}
-	c.deleteAndUnlink(cacheEntry)
+	c.unlink(cacheEntry)
+	c.linkFirst(cacheEntry)
 	return cacheEntry, ok
 }
 
