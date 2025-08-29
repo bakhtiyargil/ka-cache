@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"ka-cache/logger"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type Entry struct {
 type LruCache struct {
 	cacheMap    map[string]*Entry
 	logger      logger.Logger
+	rwMutex     sync.RWMutex
 	capacity    int
 	cleanupStop chan bool
 	head        *Entry
@@ -42,6 +44,9 @@ func NewLruCache(cap int, logger logger.Logger) SelfClearingCache {
 }
 
 func (c *LruCache) Put(key string, value string, ttl int64) error {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
 	existingNode, ok := c.cacheMap[key]
 	if ok {
 		existingNode.Value = value
@@ -52,8 +57,7 @@ func (c *LruCache) Put(key string, value string, ttl int64) error {
 		c.linkFirst(existingNode)
 	} else {
 		if len(c.cacheMap) >= c.capacity {
-			delete(c.cacheMap, c.tail.key)
-			c.unlink(c.tail)
+			c.deleteAndUnlink(c.tail)
 		}
 		var newEntry Entry
 		newEntry.key = key
@@ -68,17 +72,18 @@ func (c *LruCache) Put(key string, value string, ttl int64) error {
 }
 
 func (c *LruCache) Get(key string) (*Entry, bool) {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
 	cacheEntry, ok := c.cacheMap[key]
 	if !ok {
 		return nil, false
 	}
 	if cacheEntry.expiresAt.Before(time.Now()) {
-		delete(c.cacheMap, key)
-		c.unlink(cacheEntry)
+		c.deleteAndUnlink(cacheEntry)
 		return nil, false
 	}
-	c.unlink(cacheEntry)
-	c.linkFirst(cacheEntry)
+	c.deleteAndUnlink(cacheEntry)
 	return cacheEntry, ok
 }
 
@@ -91,6 +96,11 @@ func (c *LruCache) TTL(key string) time.Duration {
 		return -2
 	}
 	return time.Until(entry.expiresAt)
+}
+
+func (c *LruCache) deleteAndUnlink(entry *Entry) {
+	delete(c.cacheMap, entry.key)
+	c.unlink(entry)
 }
 
 func (c *LruCache) unlink(oldEntry *Entry) {
