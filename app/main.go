@@ -9,19 +9,19 @@ import (
 )
 
 func main() {
-	c := cache.NewLruCache(bootstrap.App.Config.Cache.Capacity, bootstrap.App.Logger)
+	c := cache.NewLruCache[string, string](bootstrap.App.Config.Cache.Capacity, bootstrap.App.Logger)
 	go c.StartCleanup(bootstrap.App.Config.Cache.CleanupInterval * time.Second)
 	go startHttpServer(c)
 	startGrpcServer(c)
 }
 
-func startHttpServer(cache cache.Cache) {
+func startHttpServer(cache cache.Cache[string, string]) {
 	h := http.NewCacheHandler(cache)
 	hServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger, h)
 	hServer.Start()
 }
 
-func startGrpcServer(cache cache.Cache) {
+func startGrpcServer(cache cache.Cache[string, string]) {
 	gServer := grpc.NewGrpcServer(bootstrap.App.Config, bootstrap.App.Logger, cache)
 	gServer.Start()
 }

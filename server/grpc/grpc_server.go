@@ -17,11 +17,11 @@ type GrpcServer struct {
 	cfg       *config.Config
 	logger    logger.Logger
 	isRunning bool
-	cache     cache.Cache
+	cache     cache.Cache[string, string]
 	UnimplementedCacheServer
 }
 
-func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache) server.Server {
+func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[string, string]) server.Server {
 	s := &GrpcServer{
 		cfg:    cfg,
 		logger: logger,
