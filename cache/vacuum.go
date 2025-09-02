@@ -4,14 +4,14 @@ import (
 	"time"
 )
 
-type SelfClearingCache interface {
+type SelfClearingCache[K comparable, V any] interface {
 	StartCleanup(interval time.Duration)
 	StopCleanup()
 	CleanupChannel() chan bool
-	Cache
+	Cache[K, V]
 }
 
-func (c *LruCache) StartCleanup(interval time.Duration) {
+func (c *LruCache[K, V]) StartCleanup(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -26,11 +26,11 @@ func (c *LruCache) StartCleanup(interval time.Duration) {
 	}
 }
 
-func (c *LruCache) StopCleanup() {
+func (c *LruCache[K, V]) StopCleanup() {
 	close(c.CleanupChannel())
 }
 
-func (c *LruCache) deleteExpiredEntries() {
+func (c *LruCache[K, V]) deleteExpiredEntries() {
 	now := time.Now()
 	for _, item := range c.cacheMap {
 		if item.expiresAt.Before(now) {
@@ -39,6 +39,6 @@ func (c *LruCache) deleteExpiredEntries() {
 	}
 }
 
-func (c *LruCache) CleanupChannel() chan bool {
+func (c *LruCache[K, V]) CleanupChannel() chan bool {
 	return c.cleanupStop
 }

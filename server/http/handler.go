@@ -13,10 +13,10 @@ type Handler interface {
 }
 
 type CacheHandler struct {
-	cache cache.Cache
+	cache cache.Cache[string, string]
 }
 
-func NewCacheHandler(cache cache.Cache) Handler {
+func NewCacheHandler(cache cache.Cache[string, string]) Handler {
 	return &CacheHandler{
 		cache: cache,
 	}

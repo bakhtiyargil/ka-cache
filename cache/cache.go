@@ -7,33 +7,33 @@ import (
 	"time"
 )
 
-type Cache interface {
-	Put(key string, value string, ttl int64) error
-	Get(key string) (*Entry, bool)
-	TTL(key string) time.Duration
+type Cache[K comparable, V any] interface {
+	Put(key K, value V, ttl int64) error
+	Get(key K) (*Entry[K, V], bool)
+	TTL(key K) time.Duration
 }
 
-type Entry struct {
-	key       string
-	Value     string
+type Entry[K comparable, V any] struct {
+	key       K
+	Value     V
 	expiresAt time.Time
-	next      *Entry
-	prev      *Entry
+	next      *Entry[K, V]
+	prev      *Entry[K, V]
 }
 
-type LruCache struct {
-	cacheMap    map[string]*Entry
+type LruCache[K comparable, V any] struct {
+	cacheMap    map[K]*Entry[K, V]
 	logger      logger.Logger
 	rwMutex     sync.RWMutex
 	capacity    int
 	cleanupStop chan bool
-	head        *Entry
-	tail        *Entry
+	head        *Entry[K, V]
+	tail        *Entry[K, V]
 }
 
-func NewLruCache(cap int, logger logger.Logger) SelfClearingCache {
-	newCacheMap := make(map[string]*Entry, cap)
-	cache := LruCache{
+func NewLruCache[K comparable, V any](cap int, logger logger.Logger) SelfClearingCache[K, V] {
+	newCacheMap := make(map[K]*Entry[K, V], cap)
+	cache := LruCache[K, V]{
 		cacheMap: newCacheMap,
 		capacity: cap,
 		logger:   logger,
@@ -43,7 +43,7 @@ func NewLruCache(cap int, logger logger.Logger) SelfClearingCache {
 	return &cache
 }
 
-func (c *LruCache) Put(key string, value string, ttl int64) error {
+func (c *LruCache[K, V]) Put(key K, value V, ttl int64) error {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -59,7 +59,7 @@ func (c *LruCache) Put(key string, value string, ttl int64) error {
 		if len(c.cacheMap) >= c.capacity {
 			c.deleteAndUnlink(c.tail)
 		}
-		var newEntry Entry
+		var newEntry Entry[K, V]
 		newEntry.key = key
 		newEntry.Value = value
 		if err := c.setExpirationTime(&newEntry, ttl); err != nil {
@@ -71,7 +71,7 @@ func (c *LruCache) Put(key string, value string, ttl int64) error {
 	return nil
 }
 
-func (c *LruCache) Get(key string) (*Entry, bool) {
+func (c *LruCache[K, V]) Get(key K) (*Entry[K, V], bool) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -88,7 +88,7 @@ func (c *LruCache) Get(key string) (*Entry, bool) {
 	return cacheEntry, ok
 }
 
-func (c *LruCache) TTL(key string) time.Duration {
+func (c *LruCache[K, V]) TTL(key K) time.Duration {
 	entry, ok := c.cacheMap[key]
 	if !ok {
 		return -2
@@ -99,12 +99,12 @@ func (c *LruCache) TTL(key string) time.Duration {
 	return time.Until(entry.expiresAt)
 }
 
-func (c *LruCache) deleteAndUnlink(entry *Entry) {
+func (c *LruCache[K, V]) deleteAndUnlink(entry *Entry[K, V]) {
 	delete(c.cacheMap, entry.key)
 	c.unlink(entry)
 }
 
-func (c *LruCache) unlink(oldEntry *Entry) {
+func (c *LruCache[K, V]) unlink(oldEntry *Entry[K, V]) {
 	if oldEntry == c.head && oldEntry == c.tail {
 		oldEntry.next = nil
 		oldEntry.prev = nil
@@ -127,7 +127,7 @@ func (c *LruCache) unlink(oldEntry *Entry) {
 	}
 }
 
-func (c *LruCache) linkFirst(entry *Entry) {
+func (c *LruCache[K, V]) linkFirst(entry *Entry[K, V]) {
 	oldHead := c.head
 	entry.prev = oldHead
 	entry.next = nil
@@ -139,7 +139,7 @@ func (c *LruCache) linkFirst(entry *Entry) {
 	}
 }
 
-func (c *LruCache) setExpirationTime(entry *Entry, ttl int64) error {
+func (c *LruCache[K, V]) setExpirationTime(entry *Entry[K, V], ttl int64) error {
 	if ttl <= 0 {
 		return errors.New("ttl must be greater than 0")
 	}
