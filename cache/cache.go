@@ -43,7 +43,15 @@ func NewLruCache[K comparable, V any](cap int, logger logger.Logger) SelfClearin
 	return &cache
 }
 
-func (c *LruCache[K, V]) Put(key K, value V, ttl int64) error {
+func (c *LruCache[K, V]) Put(key K, value V, ttl int64) (err error) {
+	strKey, key := c.checkStrKey(key)
+	if len(strKey) == 0 {
+		return c.putAny(key, value, ttl)
+	}
+	return c.putAny(any(strKey).(K), value, ttl)
+}
+
+func (c *LruCache[K, V]) putAny(key K, value V, ttl int64) error {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -72,6 +80,14 @@ func (c *LruCache[K, V]) Put(key K, value V, ttl int64) error {
 }
 
 func (c *LruCache[K, V]) Get(key K) (*Entry[K, V], bool) {
+	strKey, key := c.checkStrKey(key)
+	if len(strKey) == 0 {
+		return c.getAny(key)
+	}
+	return c.getAny(any(strKey).(K))
+}
+
+func (c *LruCache[K, V]) getAny(key K) (*Entry[K, V], bool) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -146,4 +162,13 @@ func (c *LruCache[K, V]) setExpirationTime(entry *Entry[K, V], ttl int64) error 
 	expiresAt := time.Now().Add(time.Duration(ttl) * time.Second)
 	entry.expiresAt = expiresAt
 	return nil
+}
+
+func (c *LruCache[K, V]) checkStrKey(key K) (string, K) {
+	strKey, ok := any(key).(string)
+	if ok {
+		strKey = intern(strKey)
+		return strKey, key
+	}
+	return "", key
 }
