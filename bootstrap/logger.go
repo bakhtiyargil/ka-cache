@@ -1,11 +1,14 @@
 package bootstrap
 
 import (
+	"errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"io/fs"
 	"ka-cache/config"
 	"ka-cache/logger"
 	"os"
+	"syscall"
 )
 
 var loggerLevelMap = map[string]zapcore.Level{
@@ -35,7 +38,12 @@ func initLogger() logger.Logger {
 	lggr := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	customLogger.SugarLogger = lggr.Sugar()
-	if err := customLogger.SugarLogger.Sync(); err != nil {
+
+	/*
+		:uber-zap ENOTTY error bypass (no fix!)
+	*/
+	var pathErr *fs.PathError
+	if err := customLogger.SugarLogger.Sync(); !(errors.Is(err, syscall.ENOTTY) || errors.As(err, &pathErr)) {
 		customLogger.SugarLogger.Error(err)
 	}
 	return customLogger

@@ -18,6 +18,7 @@ type GrpcServer struct {
 	logger    logger.Logger
 	isRunning bool
 	cache     cache.Cache[string, string]
+	server    *grpc.Server
 	UnimplementedCacheServer
 }
 
@@ -26,6 +27,7 @@ func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[s
 		cfg:    cfg,
 		logger: logger,
 		cache:  cache,
+		server: grpc.NewServer(),
 	}
 	return s
 }
@@ -57,14 +59,28 @@ func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 }
 
 func (s *GrpcServer) Start() {
-	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	RegisterCacheServer(grpcServer, s)
-	err := grpcServer.Serve(listener)
-	if err != nil {
-		s.logger.Fatalf("failed to start grpc server: %v", err)
+	if s.Running() {
+		s.logger.Fatal("grpc server is already running")
 	}
+	go func() {
+		listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
+		RegisterCacheServer(s.server, s)
+		err := s.server.Serve(listener)
+		if err != nil {
+			s.logger.Fatalf("failed to start grpc server: %v", err)
+		}
+	}()
+	s.isRunning = true
+	s.logger.Infof("grpc server is listening on port: %s", s.cfg.Server.Grpc.Port)
+}
+
+func (s *GrpcServer) Stop() {
+	if !s.Running() {
+		s.logger.Fatal("grpc server is not running")
+	}
+	s.logger.Info("grpc server exited properly")
+	s.server.GracefulStop()
+	s.isRunning = false
 }
 
 func (s *GrpcServer) Running() bool {

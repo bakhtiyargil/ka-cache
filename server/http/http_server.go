@@ -1,15 +1,14 @@
 package http
 
 import (
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/net/context"
 	"ka-cache/config"
 	"ka-cache/logger"
+	"ka-cache/server"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -19,22 +18,24 @@ type SimpleHttpServer struct {
 	cfg       *config.Config
 	echo      *echo.Echo
 	logger    logger.Logger
+	stopChan  chan os.Signal
 	isRunning bool
 }
 
-func NewHttpServer(cfg *config.Config, logger logger.Logger, handler Handler) *SimpleHttpServer {
-	server := &http.Server{
+func NewHttpServer(cfg *config.Config, logger logger.Logger, handler Handler) server.Server {
+	s := &http.Server{
 		Addr:           ":" + cfg.Server.Default.Port,
 		ReadTimeout:    time.Second * cfg.Server.Default.ReadTimeout,
 		WriteTimeout:   time.Second * cfg.Server.Default.WriteTimeout,
 		MaxHeaderBytes: cfg.Server.Default.MaxHeaderBytes,
 	}
 	return &SimpleHttpServer{
-		server:  server,
-		handler: handler,
-		cfg:     cfg,
-		echo:    echo.New(),
-		logger:  logger,
+		server:   s,
+		handler:  handler,
+		cfg:      cfg,
+		echo:     echo.New(),
+		logger:   logger,
+		stopChan: make(chan os.Signal, 1),
 	}
 }
 
@@ -43,9 +44,11 @@ func (s *SimpleHttpServer) Start() {
 		s.logger.Fatal("http server is already running")
 	}
 	go func() {
-		s.logger.Infof("http server is listening on port: %s", s.server.Addr)
+		s.logger.Infof("http server is listening on port: %s", s.cfg.Server.Default.Port)
+		s.echo.HideBanner = true
+		s.echo.HidePort = true
 		if err := s.echo.StartServer(s.server); err != nil {
-			s.logger.Fatalf("error starting http server: %v", err)
+			s.logger.Fatalf("failed to start http server: %v", err)
 		}
 	}()
 
@@ -53,11 +56,12 @@ func (s *SimpleHttpServer) Start() {
 	s.appendMiddleware(s.echo, amw)
 	s.appendRoutes(s.echo)
 	s.isRunning = true
+}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-
+func (s *SimpleHttpServer) Stop() {
+	if !s.Running() {
+		s.logger.Fatal("http server is not running")
+	}
 	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdown()
 
