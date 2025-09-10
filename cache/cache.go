@@ -67,14 +67,12 @@ func (c *LruCache[K, V]) putAny(key K, value V, ttl int64) error {
 		if len(c.cacheMap) >= c.capacity {
 			c.deleteAndUnlink(c.tail)
 		}
-		var newEntry Entry[K, V]
-		newEntry.key = key
-		newEntry.Value = value
-		if err := c.setExpirationTime(&newEntry, ttl); err != nil {
+		newEntry := &Entry[K, V]{key: key, Value: value}
+		if err := c.setExpirationTime(newEntry, ttl); err != nil {
 			return err
 		}
-		c.cacheMap[key] = &newEntry
-		c.linkFirst(&newEntry)
+		c.cacheMap[key] = newEntry
+		c.linkFirst(newEntry)
 	}
 	return nil
 }

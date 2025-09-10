@@ -29,6 +29,7 @@ func intern(s string) string {
 	}
 	obj := &interned{val: s}
 	internPool.m[s] = obj
+
 	// when obj is GC'ed, remove it from pool. Temp. Not Optimal.
 	runtime.SetFinalizer(obj, func(i *interned) {
 		internPool.Lock()
