@@ -13,24 +13,26 @@ import (
 	"net"
 )
 
-type GrpcServer struct {
+type SimpleGrpcServer struct {
 	cfg       *config.Config
 	logger    logger.Logger
 	isRunning bool
 	cache     cache.Cache[string, string]
+	server    *grpc.Server
 	UnimplementedCacheServer
 }
 
 func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[string, string]) server.Server {
-	s := &GrpcServer{
+	s := &SimpleGrpcServer{
 		cfg:    cfg,
 		logger: logger,
 		cache:  cache,
+		server: grpc.NewServer(),
 	}
 	return s
 }
 
-func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
+func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 	err := s.cache.Put(item.Key, item.Value, item.Ttl)
 	if err != nil {
 		return nil, http.InternalServerError
@@ -43,7 +45,7 @@ func (s *GrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 	}, nil
 }
 
-func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
+func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	var entry, ok = s.cache.Get(obj.Key)
 	if !ok {
 		return nil, http.ResourceNotFoundError
@@ -56,17 +58,31 @@ func (s *GrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	}, nil
 }
 
-func (s *GrpcServer) Start() {
-	listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	RegisterCacheServer(grpcServer, s)
-	err := grpcServer.Serve(listener)
-	if err != nil {
-		s.logger.Fatalf("failed to start grpc server: %v", err)
+func (s *SimpleGrpcServer) Start() {
+	if s.Running() {
+		s.logger.Fatal("grpc server is already running")
 	}
+	go func() {
+		listener, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.Server.Grpc.Port))
+		RegisterCacheServer(s.server, s)
+		err := s.server.Serve(listener)
+		if err != nil {
+			s.logger.Fatalf("failed to start grpc server: %v", err)
+		}
+	}()
+	s.isRunning = true
+	s.logger.Infof("grpc server is listening on port: %s", s.cfg.Server.Grpc.Port)
 }
 
-func (s *GrpcServer) Running() bool {
+func (s *SimpleGrpcServer) Stop() {
+	if !s.Running() {
+		s.logger.Fatal("grpc server is not running")
+	}
+	s.logger.Info("grpc server exited properly")
+	s.server.GracefulStop()
+	s.isRunning = false
+}
+
+func (s *SimpleGrpcServer) Running() bool {
 	return s.isRunning
 }
