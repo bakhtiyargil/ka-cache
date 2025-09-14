@@ -46,7 +46,7 @@ func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, erro
 }
 
 func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
-	var entry, ok = s.cache.Get(obj.Key)
+	var value, ok = s.cache.Get(obj.Key)
 	if !ok {
 		return nil, http.ResourceNotFoundError
 	}
@@ -54,7 +54,7 @@ func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, err
 	return &Response{
 		Message: "success",
 		Code:    1,
-		Data:    entry.Value,
+		Data:    value,
 	}, nil
 }
 

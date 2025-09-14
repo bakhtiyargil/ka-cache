@@ -31,13 +31,13 @@ func (h *CacheHandler) mapHealthRouteHandlers(health *echo.Group) {
 func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 	base.GET("/:key", func(c echo.Context) error {
 		itemKey := c.Param("key")
-		item, ok := h.cache.Get(itemKey)
+		value, ok := h.cache.Get(itemKey)
 		if !ok {
 			err := NewResourceNotFound("")
 			return c.JSON(err.Status(), err)
 		}
 		data := model.DataResponse{
-			Data: item.Value,
+			Data: value,
 		}
 		return c.JSON(http.StatusOK, data)
 	})
