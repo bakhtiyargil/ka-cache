@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"ka-cache/logger"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -80,6 +83,7 @@ func (c *LruCache[K, V]) putAny(key K, value []byte, ttl int64) error {
 	}
 	return nil
 }
+
 func (c *LruCache[K, V]) Get(key K) (V, bool) {
 	var (
 		entry *Entry[K]
@@ -98,16 +102,8 @@ func (c *LruCache[K, V]) Get(key K) (V, bool) {
 		return zeroV, false
 	}
 
-	//TODO: check all for type cast
-	if _, isString := any(*new(V)).(string); isString {
-		val, ok := any(string(entry.Value)).(V)
-		if ok {
-			return val, true
-		}
-	}
-
-	val, ok := any(entry.Value).(V)
-	if ok {
+	val, err := c.anyCast(entry.Value, key)
+	if err == nil {
 		return val, true
 	}
 	return zeroV, false
@@ -205,4 +201,46 @@ func (c *LruCache[K, V]) conv2Byte(val V) ([]byte, V) {
 		return []byte(strVal), val
 	}
 	return nil, val
+}
+
+func (c *LruCache[K, V]) anyCast(b []byte, key K) (out V, err error) {
+	var zero V
+	var anyVal any
+	switch any(zero).(type) {
+	case string:
+		anyVal = string(b)
+	case int:
+		i, e := strconv.Atoi(string(b))
+		if e != nil {
+			return zero, e
+		}
+		anyVal = i
+	case int64:
+		i, e := strconv.ParseInt(string(b), 10, 64)
+		if e != nil {
+			return zero, e
+		}
+		anyVal = i
+	case float64:
+		f, e := strconv.ParseFloat(string(b), 64)
+		if e != nil {
+			return zero, e
+		}
+		anyVal = f
+	case byte:
+		if len(b) == 0 {
+			return zero, fmt.Errorf("empty input for byte. key [%s]", key)
+		}
+		anyVal = b[0]
+	case []byte:
+		anyVal = b
+	case uint32:
+		if len(b) < 4 {
+			return zero, fmt.Errorf("not enough bytes for uint32. key [%s]", key)
+		}
+		anyVal = binary.BigEndian.Uint32(b)
+	default:
+		return any(b).(V), nil
+	}
+	return anyVal.(V), nil
 }
