@@ -229,14 +229,14 @@ func (c *LruCache[K, V]) anyCast(b []byte, key K) (out V, err error) {
 		anyVal = f
 	case byte:
 		if len(b) == 0 {
-			return zero, fmt.Errorf("empty input for byte. key [%s]", key)
+			return zero, fmt.Errorf("empty input for byte. key [%v]", key)
 		}
 		anyVal = b[0]
 	case []byte:
 		anyVal = b
 	case uint32:
 		if len(b) < 4 {
-			return zero, fmt.Errorf("not enough bytes for uint32. key [%s]", key)
+			return zero, fmt.Errorf("not enough bytes for uint32. key [%v]", key)
 		}
 		anyVal = binary.BigEndian.Uint32(b)
 	default:
