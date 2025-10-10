@@ -24,7 +24,7 @@ func NewCacheHandler(cache cache.Cache[string, string]) Handler {
 
 func (h *CacheHandler) mapHealthRouteHandlers(health *echo.Group) {
 	health.GET("", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, model.NewSuccessResponse())
+		return c.NoContent(http.StatusOK)
 	})
 }
 
@@ -53,6 +53,6 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 			internalError := NewInternalServerError(err.Error())
 			return c.JSON(internalError.Status(), internalError)
 		}
-		return c.JSON(http.StatusOK, model.NewSuccessResponse())
+		return c.NoContent(http.StatusOK)
 	})
 }

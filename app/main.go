@@ -18,19 +18,37 @@ func main() {
 }
 
 func startServers(cache cache.Cache[string, string]) {
-	h := http.NewCacheHandler(cache)
-	hServer := http.NewHttpServer(bootstrap.App.Config, bootstrap.App.Logger, h)
-	hServer.Start()
+	cfg := bootstrap.App.Config
 
-	gServer := grpc.NewGrpcServer(bootstrap.App.Config, bootstrap.App.Logger, cache)
-	gServer.Start()
+	h := http.NewCacheHandler(cache)
+	hServer := http.NewHttpServer(cfg, bootstrap.App.Logger, h)
+	if cfg.Server.Default.EnableSecure {
+		hServer.StartSecure()
+	} else {
+		hServer.Start()
+	}
+
+	gServer := grpc.NewGrpcServer(cfg, bootstrap.App.Logger, cache)
+	if cfg.Server.Grpc.EnableSecure {
+		gServer.StartSecure()
+	} else {
+		gServer.Start()
+	}
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
-
 	select {
 	case <-stopChan:
-		hServer.Stop()
-		gServer.Stop()
+		if cfg.Server.Grpc.EnableSecure {
+			gServer.StopSecure()
+		} else {
+			gServer.Stop()
+		}
+
+		if cfg.Server.Default.EnableSecure {
+			hServer.StopSecure()
+		} else {
+			hServer.Stop()
+		}
 	}
 }
