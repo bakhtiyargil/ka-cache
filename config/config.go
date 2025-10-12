@@ -22,10 +22,18 @@ type DefaultServerConfig struct {
 	WriteTimeout   time.Duration `yaml:"writeTimeout"`
 	MaxHeaderBytes int           `yaml:"maxHeaderBytes"`
 	AllowOrigins   []string      `yaml:"allowOrigins"`
+	EnableSecure   bool          `yaml:"enableSecure"`
+	SecurePort     string        `yaml:"securePort"`
+	CertFile       string        `yaml:"certFile"`
+	KeyFile        string        `yaml:"keyFile"`
 }
 
 type GrpcServerConfig struct {
-	Port string `yaml:"port"`
+	Port         string `yaml:"port"`
+	EnableSecure bool   `yaml:"enableSecure"`
+	SecurePort   string `yaml:"securePort"`
+	CertFile     string `yaml:"certFile"`
+	KeyFile      string `yaml:"keyFile"`
 }
 
 type Logger struct {

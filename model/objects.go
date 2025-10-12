@@ -6,15 +6,6 @@ type Item struct {
 	Ttl   int64  `json:"ttl"`
 }
 
-type SuccessResponse struct {
-	Message string `json:"message"`
-}
-
 type DataResponse struct {
 	Data string `json:"data"`
-}
-
-func NewSuccessResponse() *SuccessResponse {
-	resp := SuccessResponse{Message: "success"}
-	return &resp
 }
