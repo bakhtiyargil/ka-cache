@@ -40,6 +40,7 @@ func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[s
 func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 	err := s.cache.Put(item.Key, item.Value, item.Ttl)
 	if err != nil {
+		s.logger.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	r := &Response{

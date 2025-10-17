@@ -166,6 +166,7 @@ func (s *SimpleHttpServer) appendMiddleware(e *echo.Echo) {
 	e.Use(middleware.BodyLimit("2M"))
 
 	e.Use(s.middlewareManager.RequestLoggerMiddleware)
+	e.Use(s.middlewareManager.ErrorHandlerMiddleware)
 	e.Use(s.middlewareManager.CorsMiddleware)
 }
 

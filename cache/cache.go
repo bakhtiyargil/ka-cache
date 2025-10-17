@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"ka-cache/logger"
 	"strconv"
 	"sync"
 	"time"
@@ -26,7 +25,6 @@ type Entry[K comparable] struct {
 
 type LruCache[K comparable, V any] struct {
 	cacheMap    map[K]*Entry[K]
-	logger      logger.Logger
 	rwMutex     sync.RWMutex
 	capacity    int
 	cleanupStop chan bool
@@ -34,12 +32,11 @@ type LruCache[K comparable, V any] struct {
 	tail        *Entry[K]
 }
 
-func NewLruCache[K comparable, V any](cap int, logger logger.Logger) SelfClearingCache[K, V] {
+func NewLruCache[K comparable, V any](cap int) SelfClearingCache[K, V] {
 	newCacheMap := make(map[K]*Entry[K], cap)
 	cache := LruCache[K, V]{
 		cacheMap: newCacheMap,
 		capacity: cap,
-		logger:   logger,
 		head:     nil,
 		tail:     nil,
 	}

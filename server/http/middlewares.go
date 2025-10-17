@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/logger"
@@ -10,6 +11,7 @@ import (
 type MiddlewareManager interface {
 	RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 	CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	ErrorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type ApiMiddlewareManager struct {
@@ -29,12 +31,10 @@ func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) e
 		req := ctx.Request()
 		res := ctx.Response()
 		status := res.Status
-		size := res.Size
 		requestID := GetRequestID(ctx)
-
 		elapsed := time.Since(start).String()
-		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Size: %v, Time: %s",
-			requestID, req.Method, req.URL, status, size, elapsed,
+		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Time: %s",
+			requestID, req.Method, req.URL, status, elapsed,
 		)
 		return err
 	}
@@ -53,6 +53,26 @@ func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.Handl
 			ExposeHeaders: []string{echo.HeaderXRequestID},
 		})
 		return next(ctx)
+	}
+}
+
+func (mw *ApiMiddlewareManager) ErrorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		reqID := c.Response().Header().Get(echo.HeaderXRequestID)
+		if err == nil {
+			return nil
+		}
+
+		var restErr RestError
+		if errors.As(err, &restErr) {
+			mw.logger.Infof("RequestID: %s, Error: %s", reqID, restErr.Causes())
+			return c.JSON(restErr.Status(), restErr)
+		}
+
+		internalErr := NewInternalServerError(reqID, err.Error())
+		mw.logger.Infof("RequestID: %s, Error: %s", reqID, internalErr.Causes())
+		return c.JSON(internalErr.Status(), internalErr)
 	}
 }
 

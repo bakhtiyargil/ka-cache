@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"ka-cache/bootstrap"
 	"time"
 )
+
+var logger = bootstrap.App.Logger
 
 type SelfClearingCache[K comparable, V any] interface {
 	StartCleanup(interval time.Duration)
@@ -17,9 +20,9 @@ func (c *LruCache[K, V]) StartCleanup(interval time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
-			c.logger.Info("cache cleanup started")
+			logger.Info("cache cleanup started")
 			c.deleteExpiredEntries()
-			c.logger.Info("cache cleanup completed")
+			logger.Info("cache cleanup completed")
 		case <-c.CleanupChannel():
 			return
 		}
