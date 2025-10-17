@@ -5,15 +5,17 @@ import (
 	"crypto/tls"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 	"ka-cache/cache"
 	"ka-cache/config"
 	"ka-cache/logger"
 	"ka-cache/server"
-	"ka-cache/server/http"
-	"log"
 	"net"
 )
+
+const success = "success"
 
 type SimpleGrpcServer struct {
 	server          *grpc.Server
@@ -35,31 +37,29 @@ func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[s
 	return s
 }
 
-// todo gonna add request id for track(correct req and resp models) and correct logging
 func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 	err := s.cache.Put(item.Key, item.Value, item.Ttl)
 	if err != nil {
-		return nil, http.InternalServerError
+		return nil, status.Error(codes.Internal, err.Error())
 	}
-	log.Print("item: " + item.Key + " - successfully set")
-	return &Response{
-		Message: "success",
-		Code:    1,
-		Data:    "",
-	}, nil
+	r := &Response{
+		Code:    0,
+		Message: success,
+	}
+	return r, nil
 }
 
 func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	var value, ok = s.cache.Get(obj.Key)
 	if !ok {
-		return nil, http.ResourceNotFoundError
+		return nil, status.Error(codes.NotFound, "resource not found")
 	}
-	s.logger.Info("item: " + obj.Key + " - successfully retrieved")
-	return &Response{
-		Message: "success",
-		Code:    1,
+	r := &Response{
+		Code:    0,
+		Message: success,
 		Data:    value,
-	}, nil
+	}
+	return r, nil
 }
 
 func (s *SimpleGrpcServer) Start() {
