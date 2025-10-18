@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"ka-cache/cache"
 	"ka-cache/config"
@@ -40,7 +43,8 @@ func NewGrpcServer(cfg *config.Config, logger logger.Logger, cache cache.Cache[s
 func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, error) {
 	err := s.cache.Put(item.Key, item.Value, item.Ttl)
 	if err != nil {
-		s.logger.Error(err)
+		reqID := getRequestID(ctx)
+		s.logger.Errorf("RequestID: %s, Error: %s", reqID, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	r := &Response{
@@ -53,6 +57,8 @@ func (s *SimpleGrpcServer) Put(ctx context.Context, item *Item) (*Response, erro
 func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, error) {
 	var value, ok = s.cache.Get(obj.Key)
 	if !ok {
+		reqID := getRequestID(ctx)
+		s.logger.Errorf("RequestID: %s, Error: %s", reqID, "resource not found")
 		return nil, status.Error(codes.NotFound, "resource not found")
 	}
 	r := &Response{
@@ -68,7 +74,9 @@ func (s *SimpleGrpcServer) Start() {
 		s.logger.Fatal("grpc server is already running")
 	}
 
-	s.server = grpc.NewServer()
+	s.server = grpc.NewServer(
+		grpc.UnaryInterceptor(requestIDInterceptor()),
+	)
 
 	addr := fmt.Sprintf(":%s", s.cfg.Server.Grpc.Port)
 	go func() {
@@ -114,7 +122,7 @@ func (s *SimpleGrpcServer) StartSecure() {
 		MinVersion:   tls.VersionTLS12,
 	}
 	creds := credentials.NewTLS(tlsConfig)
-	s.serverSecure = grpc.NewServer(grpc.Creds(creds))
+	s.serverSecure = grpc.NewServer(grpc.Creds(creds), grpc.UnaryInterceptor(requestIDInterceptor()))
 
 	addr := fmt.Sprintf(":%s", s.cfg.Server.Grpc.SecurePort)
 	go func() {
@@ -144,4 +152,37 @@ func (s *SimpleGrpcServer) StopSecure() {
 
 func (s *SimpleGrpcServer) SecureRunning() bool {
 	return s.isSecureRunning
+}
+
+func requestIDInterceptor() grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		var requestID string
+		if values := md.Get(echo.HeaderXRequestID); len(values) > 0 {
+			requestID = values[0]
+		}
+
+		if requestID == "" {
+			requestID = uuid.NewString()
+		}
+
+		ctx = context.WithValue(ctx, echo.HeaderXRequestID, requestID)
+		if err := grpc.SetHeader(ctx, metadata.Pairs(echo.HeaderXRequestID, requestID)); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to set header: %v", err)
+		}
+		resp, err := handler(ctx, req)
+		return resp, err
+	}
+}
+
+func getRequestID(ctx context.Context) string {
+	if v := ctx.Value(echo.HeaderXRequestID); v != nil {
+		return v.(string)
+	}
+	return ""
 }

@@ -9,9 +9,9 @@ import (
 )
 
 type MiddlewareManager interface {
-	RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
-	CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc
-	ErrorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	requestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	corsMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	errorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type ApiMiddlewareManager struct {
@@ -23,7 +23,7 @@ func NewApiMiddlewareManager(origins []string, logger logger.Logger) MiddlewareM
 	return &ApiMiddlewareManager{allowOrigins: origins, logger: logger}
 }
 
-func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (mw *ApiMiddlewareManager) requestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		start := time.Now()
 
@@ -31,7 +31,7 @@ func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) e
 		req := ctx.Request()
 		res := ctx.Response()
 		status := res.Status
-		requestID := GetRequestID(ctx)
+		requestID := getRequestID(ctx)
 		elapsed := time.Since(start).String()
 		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Time: %s",
 			requestID, req.Method, req.URL, status, elapsed,
@@ -40,7 +40,7 @@ func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) e
 	}
 }
 
-func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (mw *ApiMiddlewareManager) corsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: mw.allowOrigins,
@@ -56,26 +56,26 @@ func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.Handl
 	}
 }
 
-func (mw *ApiMiddlewareManager) ErrorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (mw *ApiMiddlewareManager) errorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		err := next(c)
-		reqID := c.Response().Header().Get(echo.HeaderXRequestID)
 		if err == nil {
 			return nil
 		}
 
+		reqID := c.Response().Header().Get(echo.HeaderXRequestID)
 		var restErr RestError
 		if errors.As(err, &restErr) {
-			mw.logger.Infof("RequestID: %s, Error: %s", reqID, restErr.Causes())
+			mw.logger.Errorf("RequestID: %s, Error: %s", reqID, restErr.Causes())
 			return c.JSON(restErr.Status(), restErr)
 		}
 
 		internalErr := NewInternalServerError(reqID, err.Error())
-		mw.logger.Infof("RequestID: %s, Error: %s", reqID, internalErr.Causes())
+		mw.logger.Errorf("RequestID: %s, Error: %s", reqID, internalErr.Causes())
 		return c.JSON(internalErr.Status(), internalErr)
 	}
 }
 
-func GetRequestID(c echo.Context) string {
+func getRequestID(c echo.Context) string {
 	return c.Response().Header().Get(echo.HeaderXRequestID)
 }

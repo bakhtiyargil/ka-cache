@@ -32,10 +32,9 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 	base.GET("/:key", func(c echo.Context) error {
 		itemKey := c.Param("key")
 		value, ok := h.cache.Get(itemKey)
-		reqId := c.Response().Header().Get(echo.HeaderXRequestID)
 		if !ok {
-			err := NewResourceNotFound(reqId, nil)
-			return err
+			reqId := c.Response().Header().Get(echo.HeaderXRequestID)
+			return NewResourceNotFound(reqId, nil)
 		}
 		data := model.DataResponse{
 			Data: value,

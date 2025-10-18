@@ -165,9 +165,9 @@ func (s *SimpleHttpServer) appendMiddleware(e *echo.Echo) {
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
 	e.Use(middleware.BodyLimit("2M"))
 
-	e.Use(s.middlewareManager.RequestLoggerMiddleware)
-	e.Use(s.middlewareManager.ErrorHandlerMiddleware)
-	e.Use(s.middlewareManager.CorsMiddleware)
+	e.Use(s.middlewareManager.requestLoggerMiddleware)
+	e.Use(s.middlewareManager.errorHandlerMiddleware)
+	e.Use(s.middlewareManager.corsMiddleware)
 }
 
 func (s *SimpleHttpServer) appendRoutes(e *echo.Echo) {
