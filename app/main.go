@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	c := cache.NewLruCache[string, string](bootstrap.App.Config.Cache.Capacity, bootstrap.App.Logger)
+	c := cache.NewLruCache[string, string](bootstrap.App.Config.Cache.Capacity)
 	go c.StartCleanup(bootstrap.App.Config.Cache.CleanupInterval * time.Second)
 	startServers(c)
 }

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"ka-cache/logger"
@@ -8,8 +9,9 @@ import (
 )
 
 type MiddlewareManager interface {
-	RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
-	CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	requestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	corsMiddleware(next echo.HandlerFunc) echo.HandlerFunc
+	errorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type ApiMiddlewareManager struct {
@@ -21,26 +23,24 @@ func NewApiMiddlewareManager(origins []string, logger logger.Logger) MiddlewareM
 	return &ApiMiddlewareManager{allowOrigins: origins, logger: logger}
 }
 
-func (mw *ApiMiddlewareManager) RequestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (mw *ApiMiddlewareManager) requestLoggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		start := time.Now()
-		err := next(ctx)
 
+		err := next(ctx)
 		req := ctx.Request()
 		res := ctx.Response()
 		status := res.Status
-		size := res.Size
-		s := time.Since(start).String()
-		requestID := GetRequestID(ctx)
-
-		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Size: %v, Time: %s",
-			requestID, req.Method, req.URL, status, size, s,
+		requestID := getRequestID(ctx)
+		elapsed := time.Since(start).String()
+		mw.logger.Infof("RequestID: %s, Method: %s, URI: %s, Status: %v, Time: %s",
+			requestID, req.Method, req.URL, status, elapsed,
 		)
 		return err
 	}
 }
 
-func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (mw *ApiMiddlewareManager) corsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: mw.allowOrigins,
@@ -56,6 +56,26 @@ func (mw *ApiMiddlewareManager) CorsMiddleware(next echo.HandlerFunc) echo.Handl
 	}
 }
 
-func GetRequestID(c echo.Context) string {
+func (mw *ApiMiddlewareManager) errorHandlerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		if err == nil {
+			return nil
+		}
+
+		reqID := c.Response().Header().Get(echo.HeaderXRequestID)
+		var restErr RestError
+		if errors.As(err, &restErr) {
+			mw.logger.Errorf("RequestID: %s, Error: %s", reqID, restErr.Causes())
+			return c.JSON(restErr.Status(), restErr)
+		}
+
+		internalErr := NewInternalServerError(reqID, err.Error())
+		mw.logger.Errorf("RequestID: %s, Error: %s", reqID, internalErr.Causes())
+		return c.JSON(internalErr.Status(), internalErr)
+	}
+}
+
+func getRequestID(c echo.Context) string {
 	return c.Response().Header().Get(echo.HeaderXRequestID)
 }

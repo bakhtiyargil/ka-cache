@@ -33,8 +33,8 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 		itemKey := c.Param("key")
 		value, ok := h.cache.Get(itemKey)
 		if !ok {
-			err := NewResourceNotFound("")
-			return c.JSON(err.Status(), err)
+			reqId := c.Response().Header().Get(echo.HeaderXRequestID)
+			return NewResourceNotFound(reqId, nil)
 		}
 		data := model.DataResponse{
 			Data: value,
@@ -45,13 +45,11 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 	base.PUT("", func(c echo.Context) error {
 		i := &model.Item{}
 		if err := c.Bind(i); err != nil {
-			internalError := NewInternalServerError(err.Error())
-			return c.JSON(internalError.Status(), internalError)
+			return err
 		}
 		err := h.cache.Put(i.Key, i.Value, i.Ttl)
 		if err != nil {
-			internalError := NewInternalServerError(err.Error())
-			return c.JSON(internalError.Status(), internalError)
+			return err
 		}
 		return c.NoContent(http.StatusOK)
 	})

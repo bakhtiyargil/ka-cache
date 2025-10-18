@@ -8,14 +8,14 @@ server:
     allowOrigins: "*"
     enableSecure: true
     securePort: 5002
-    certFile: "${CERT_FILE_PATH}"
-    keyFile: "${KEY_FILE_PATH}"
+    certFile: "certs/server.crt"
+    keyFile: "certs/server.key"
   grpc:
     port: 5003
     enableSecure: true
     securePort: 5004
-    certFile: "${CERT_FILE_PATH}"
-    keyFile: "${KEY_FILE_PATH}"
+    certFile: "certs/server.crt"
+    keyFile: "certs/server.key"
 
 logger:
   level: info

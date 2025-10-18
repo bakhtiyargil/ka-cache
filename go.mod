@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.4
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.9.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.75.0
