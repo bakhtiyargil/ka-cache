@@ -24,21 +24,25 @@ type Entry[K comparable] struct {
 }
 
 type LruCache[K comparable, V any] struct {
-	cacheMap    map[K]*Entry[K]
-	rwMutex     sync.RWMutex
-	capacity    int
-	cleanupStop chan bool
-	head        *Entry[K]
-	tail        *Entry[K]
+	cacheMap      map[K]*Entry[K]
+	rwMutex       sync.RWMutex
+	maxCapacity   int
+	lastCapacity  int
+	utilThreshold float64
+	cleanupStop   chan bool
+	head          *Entry[K]
+	tail          *Entry[K]
 }
 
-func NewLruCache[K comparable, V any](cap int) SelfClearingCache[K, V] {
-	newCacheMap := make(map[K]*Entry[K], cap)
+func NewLruCache[K comparable, V any](initCap, maxCap int, utilThreshold float64) SelfClearingCache[K, V] {
+	newCacheMap := make(map[K]*Entry[K], initCap)
 	cache := LruCache[K, V]{
-		cacheMap: newCacheMap,
-		capacity: cap,
-		head:     nil,
-		tail:     nil,
+		cacheMap:      newCacheMap,
+		maxCapacity:   maxCap,
+		lastCapacity:  initCap,
+		utilThreshold: utilThreshold,
+		head:          nil,
+		tail:          nil,
 	}
 	return &cache
 }
@@ -68,7 +72,7 @@ func (c *LruCache[K, V]) putAny(key K, value []byte, ttl int64) error {
 		c.unlink(existingNode)
 		c.linkFirst(existingNode)
 	} else {
-		if len(c.cacheMap) >= c.capacity {
+		if len(c.cacheMap) >= c.maxCapacity {
 			c.deleteAndUnlink(c.tail)
 		}
 		newEntry := &Entry[K]{key: key, Value: value}

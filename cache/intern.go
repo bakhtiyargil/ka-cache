@@ -6,37 +6,37 @@ import (
 )
 
 type interned struct {
-	val string
+	value string
 }
 
 var internPool = struct {
 	sync.RWMutex
-	m map[string]*interned
-}{m: make(map[string]*interned)}
+	internMap map[string]*interned
+}{internMap: make(map[string]*interned)}
 
-func intern(s string) string {
+func intern(stringValue string) string {
 	internPool.RLock()
-	if obj, ok := internPool.m[s]; ok {
+	if internObj, ok := internPool.internMap[stringValue]; ok {
 		internPool.RUnlock()
-		return obj.val
+		return internObj.value
 	}
 	internPool.RUnlock()
 
 	internPool.Lock()
-	if obj, ok := internPool.m[s]; ok {
+	if obj, ok := internPool.internMap[stringValue]; ok {
 		internPool.Unlock()
-		return obj.val
+		return obj.value
 	}
-	obj := &interned{val: s}
-	internPool.m[s] = obj
+	obj := &interned{value: stringValue}
+	internPool.internMap[stringValue] = obj
 
-	// when obj is GC'ed, remove it from pool. Temp. Not Optimal.
+	// when internObj is GC'ed, remove it from pool. Temp. Not Optimal.
 	runtime.SetFinalizer(obj, func(i *interned) {
 		internPool.Lock()
-		delete(internPool.m, i.val)
+		delete(internPool.internMap, i.value)
 		internPool.Unlock()
 	})
 	internPool.Unlock()
 
-	return s
+	return stringValue
 }
