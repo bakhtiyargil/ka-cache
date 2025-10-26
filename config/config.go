@@ -41,6 +41,12 @@ type Logger struct {
 }
 
 type Cache struct {
-	Capacity        int           `mapstructure:"cap"`
+	InitCapacity    int           `mapstructure:"initCapacity"`
+	MaxCapacity     int           `mapstructure:"maxCapacity"`
 	CleanupInterval time.Duration `mapstructure:"cleanupInterval"`
+	Shrink          Shrink
+}
+
+type Shrink struct {
+	UtilizationThreshold float64 `yaml:"utilizationThreshold"`
 }

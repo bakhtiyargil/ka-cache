@@ -21,5 +21,8 @@ logger:
   level: info
 
 cache:
-  cap: 128
+  initCapacity: 128
+  maxCapacity: 1024
   cleanupInterval: 60
+  shrink:
+    utilizationThreshold: 0.75

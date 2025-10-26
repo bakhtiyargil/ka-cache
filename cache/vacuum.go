@@ -11,6 +11,8 @@ type SelfClearingCache[K comparable, V any] interface {
 	StartCleanup(interval time.Duration)
 	StopCleanup()
 	CleanupChannel() chan bool
+	LastCapacity() int
+	UtilizationThreshold() float64
 	Cache[K, V]
 }
 
@@ -20,9 +22,12 @@ func (c *LruCache[K, V]) StartCleanup(interval time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
+			c.rwMutex.Lock()
 			logger.Info("cache cleanup started")
 			c.deleteExpiredEntries()
+			c.tryShrink()
 			logger.Info("cache cleanup completed")
+			c.rwMutex.Unlock()
 		case <-c.CleanupChannel():
 			return
 		}
@@ -31,6 +36,18 @@ func (c *LruCache[K, V]) StartCleanup(interval time.Duration) {
 
 func (c *LruCache[K, V]) StopCleanup() {
 	close(c.CleanupChannel())
+}
+
+func (c *LruCache[K, V]) CleanupChannel() chan bool {
+	return c.cleanupStop
+}
+
+func (c *LruCache[K, V]) LastCapacity() int {
+	return c.lastCapacity
+}
+
+func (c *LruCache[K, V]) UtilizationThreshold() float64 {
+	return c.utilThreshold
 }
 
 func (c *LruCache[K, V]) deleteExpiredEntries() {
@@ -42,6 +59,14 @@ func (c *LruCache[K, V]) deleteExpiredEntries() {
 	}
 }
 
-func (c *LruCache[K, V]) CleanupChannel() chan bool {
-	return c.cleanupStop
+func (c *LruCache[K, V]) tryShrink() {
+	thresholdLen := int(c.UtilizationThreshold() * float64(c.LastCapacity()))
+	if len(c.cacheMap) < thresholdLen {
+		newMap := make(map[K]*Entry[K], len(c.cacheMap))
+		for k, v := range c.cacheMap {
+			newMap[k] = v
+		}
+		c.cacheMap = newMap
+	}
+	c.lastCapacity = len(c.cacheMap)
 }
