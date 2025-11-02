@@ -6,13 +6,13 @@ server:
     writeTimeout: 5
     maxHeaderBytes: 1048576
     allowOrigins: "*"
-    enableSecure: true
+    enableSecure: false
     securePort: 5002
     certFile: "certs/server.crt"
     keyFile: "certs/server.key"
   grpc:
     port: 5003
-    enableSecure: true
+    enableSecure: false
     securePort: 5004
     certFile: "certs/server.crt"
     keyFile: "certs/server.key"
