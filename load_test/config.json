@@ -1,0 +1,19 @@
+{
+  "baseUrl": "http://localhost:5001",
+  "endpoints": {
+    "put": "/cache",
+    "get": "/cache"
+  },
+  "keys": 10000,
+  "stages": [
+    { "duration": "15s", "target": 5 },
+    { "duration": "45s", "target": 25 },
+    { "duration": "1m", "target": 50 },
+    { "duration": "30s", "target": 0 }
+  ],
+  "thresholds": {
+    "http_req_duration": ["p(95)<50", "p(99)<100"],
+    "http_req_failed": ["rate<0.01"]
+  },
+  "defaultTtl": 6000
+}
