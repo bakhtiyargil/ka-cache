@@ -8,6 +8,7 @@ service Cache {
 
   rpc Put(Item) returns (Response) {}
   rpc Get(Object) returns (Response) {}
+  rpc Delete(Object) returns (Response) {}
 
 }
 
