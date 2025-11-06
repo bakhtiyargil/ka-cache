@@ -69,6 +69,15 @@ func (s *SimpleGrpcServer) Get(ctx context.Context, obj *Object) (*Response, err
 	return r, nil
 }
 
+func (s *SimpleGrpcServer) Delete(ctx context.Context, obj *Object) (*Response, error) {
+	s.cache.Delete(obj.Key)
+	r := &Response{
+		Code:    0,
+		Message: success,
+	}
+	return r, nil
+}
+
 func (s *SimpleGrpcServer) Start() {
 	if s.Running() {
 		s.logger.Fatal("grpc server is already running")

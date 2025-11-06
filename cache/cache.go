@@ -12,6 +12,7 @@ import (
 type Cache[K comparable, V any] interface {
 	Put(key K, value V, ttl int64) error
 	Get(key K) (V, bool)
+	Delete(key K)
 	TTL(key K) time.Duration
 }
 
@@ -125,6 +126,24 @@ func (c *LruCache[K, V]) getAny(key K) (*Entry[K], bool) {
 	c.unlink(cacheEntry)
 	c.linkFirst(cacheEntry)
 	return cacheEntry, ok
+}
+
+func (c *LruCache[K, V]) Delete(key K) {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
+	strKey, key := c.conv2Str(key)
+	if len(strKey) != 0 {
+		cacheEntry, ok := c.cacheMap[any(strKey).(K)]
+		if ok {
+			c.deleteAndUnlink(cacheEntry)
+		}
+	} else {
+		cacheEntry, ok := c.cacheMap[key]
+		if ok {
+			c.deleteAndUnlink(cacheEntry)
+		}
+	}
 }
 
 func (c *LruCache[K, V]) TTL(key K) time.Duration {

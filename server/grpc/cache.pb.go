@@ -199,11 +199,12 @@ const file_cache_proto_rawDesc = "" +
 	"\bResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\rR\x04code\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\tR\x04data2S\n" +
+	"\x04data\x18\x03 \x01(\tR\x04data2}\n" +
 	"\x05Cache\x12#\n" +
 	"\x03Put\x12\n" +
 	".grpc.Item\x1a\x0e.grpc.Response\"\x00\x12%\n" +
-	"\x03Get\x12\f.grpc.Object\x1a\x0e.grpc.Response\"\x00B\x0fZ\rka-cache/grpcb\x06proto3"
+	"\x03Get\x12\f.grpc.Object\x1a\x0e.grpc.Response\"\x00\x12(\n" +
+	"\x06Delete\x12\f.grpc.Object\x1a\x0e.grpc.Response\"\x00B\x0fZ\rka-cache/grpcb\x06proto3"
 
 var (
 	file_cache_proto_rawDescOnce sync.Once
@@ -226,10 +227,12 @@ var file_cache_proto_goTypes = []any{
 var file_cache_proto_depIdxs = []int32{
 	0, // 0: grpc.Cache.Put:input_type -> grpc.Item
 	1, // 1: grpc.Cache.Get:input_type -> grpc.Object
-	2, // 2: grpc.Cache.Put:output_type -> grpc.Response
-	2, // 3: grpc.Cache.Get:output_type -> grpc.Response
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	1, // 2: grpc.Cache.Delete:input_type -> grpc.Object
+	2, // 3: grpc.Cache.Put:output_type -> grpc.Response
+	2, // 4: grpc.Cache.Get:output_type -> grpc.Response
+	2, // 5: grpc.Cache.Delete:output_type -> grpc.Response
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

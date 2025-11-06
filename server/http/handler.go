@@ -53,4 +53,10 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 		}
 		return c.NoContent(http.StatusOK)
 	})
+
+	base.DELETE("/:key", func(c echo.Context) error {
+		itemKey := c.Param("key")
+		h.cache.Delete(itemKey)
+		return c.NoContent(http.StatusOK)
+	})
 }
