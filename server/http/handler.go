@@ -47,6 +47,12 @@ func (h *CacheHandler) mapBaseRouteHandlers(base *echo.Group) {
 		if err := c.Bind(i); err != nil {
 			return err
 		}
+
+		if (len(i.Key) == 0) || (i.Ttl == 0) {
+			reqId := c.Response().Header().Get(echo.HeaderXRequestID)
+			return NewValidationError(reqId, "validation failed for object: [ttl] > 0; [key] not empty")
+		}
+
 		err := h.cache.Put(i.Key, i.Value, i.Ttl)
 		if err != nil {
 			return err

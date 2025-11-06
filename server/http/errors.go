@@ -9,6 +9,7 @@ import (
 var (
 	InternalServerError   = errors.New("internal_server_error")
 	ResourceNotFoundError = errors.New("resource_not_found_error")
+	ValidationError       = errors.New("validation_error")
 )
 
 type RestError interface {
@@ -30,6 +31,16 @@ func NewResourceNotFound(requestId string, causes interface{}) RestError {
 		ErrRequestId: requestId,
 		ErrStatus:    http.StatusNotFound,
 		ErrError:     ResourceNotFoundError.Error(),
+		ErrCauses:    causes,
+	}
+	return result
+}
+
+func NewValidationError(requestId string, causes interface{}) RestError {
+	result := &RestErrorResponse{
+		ErrRequestId: requestId,
+		ErrStatus:    http.StatusBadRequest,
+		ErrError:     ValidationError.Error(),
 		ErrCauses:    causes,
 	}
 	return result
